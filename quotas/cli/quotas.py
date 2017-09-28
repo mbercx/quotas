@@ -19,26 +19,36 @@ def main():
     pass
 
 @main.group(context_settings=CONTEXT_SETTINGS)
-def setup(filename):
+def setup():
     """
     Set up all calculations for the input required in the QUOTAS model.
     """
     pass
 
 @setup.command(context_settings=CONTEXT_SETTINGS)
-@click.argument("miller_indices")
-@click.argument("filename")
-@click.option("--vacuum", "-v", default=15,
+@click.argument("miller_indices", nargs=1)
+@click.argument("filename", nargs=1)
+@click.option("--vacuum", "-v", default=float(15),
               help="Minimum thickness of the vacuum layer.")
 @click.option("--thickness", "-t", default=20,
               help="Minimum thickness of the slab, in Angstroms.")
-@click.option("--fix", "-f", default="center",
+@click.option("--fix_part", "-f", default="center",
               help="Part of the slab to fix in the geometry optimization.")
-def slab(miller_indices, filename):
+@click.option("--fix_thickness", "-b", default=8,
+              help="Number of layers fixed as bulk in the geometry "
+                   "optimization.")
+def slab(miller_indices, filename, vacuum, thickness, fix_part, fix_thickness):
     """
     Set up all the calculations for a specific surface of a structure.
     """
     from quotas.cli.commands.setup import slab_setup
 
+    #TODO Add checks for the miller_indices
+    miller_indices = [int(number) for number in miller_indices]
+
     slab_setup(filename=filename,
-               miller_indices=miller_indices)
+               miller_indices=miller_indices,
+               thickness=thickness,
+               vacuum=vacuum,
+               fix_part=fix_part,
+               fix_thickness=fix_thickness)

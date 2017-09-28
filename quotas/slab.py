@@ -47,6 +47,8 @@ def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
 
         if part == "center":
 
+            print("Number of layers found = " + str(len(atomic_layers)))
+
             # Even number of layers
             if len(atomic_layers)%2 == 0:
 
@@ -80,6 +82,7 @@ def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
         else:
             raise NotImplementedError("Requested part is not implemented " +
                                       "(yet).")
+            #TODO Implement oneside
 
         fixed_sites = [site for layer in fixed_layers for site in layer]
 
@@ -97,6 +100,7 @@ def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
 
     else:
         raise NotImplementedError("Requested method is not implemented (yet).")
+        #TODO Implement angstrom
 
 def find_atomic_layers(structure, layer_tol=1e-2):
     """

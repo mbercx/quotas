@@ -1,9 +1,10 @@
 
 import os
-
 import quotas.slab as slab
 
-from pymatgen.io.vasp.sets import DictSet, _load_yaml_config
+from monty.serialization import loadfn
+
+from pymatgen.io.vasp.sets import DictSet
 from pymatgen.io.vasp.inputs import Poscar
 
 """
@@ -11,8 +12,14 @@ Package that defines the various calculations required for the quotas script.
 
 """
 
-MODULE_DIR = os.path.dirname(os.path.join(os.path.abspath(__file__),
-                                          "set_configs"))
+MODULE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "set_configs")
+
+def _load_yaml_config(fname):
+    config = loadfn(os.path.join(MODULE_DIR, "%s.yaml" % fname))
+    # config["INCAR"].update(loadfn(os.path.join(MODULE_DIR,
+    #                                            "VASPIncarBase.yaml")))
+    return config
 
 class slabRelaxSet(DictSet):
     """
@@ -59,6 +66,16 @@ class slabRelaxSet(DictSet):
 
         self.selective_dynamics = slab.fix_slab_bulk(self.poscar, thickness,
                                                      method, part)
+
+    @property
+    def poscar(self):
+        """
+
+        Returns:
+
+        """
+        return Poscar(self.structure,
+                      selective_dynamics=self.selective_dynamics)
 
 
 
