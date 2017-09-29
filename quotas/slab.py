@@ -47,8 +47,6 @@ def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
 
         if part == "center":
 
-            print("Number of layers found = " + str(len(atomic_layers)))
-
             # Even number of layers
             if len(atomic_layers)%2 == 0:
 
