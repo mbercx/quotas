@@ -1,6 +1,9 @@
-# Modified version of MPRelaxSet for HSE calculations.
+# PBE+U calculations used for the relaxation of a slab.
 INCAR:
   ALGO: Fast
+  AMIN: 0.01
+  AMIX: 0.2
+  BMIX: 0.001
   EDIFF: 1.0e-04
   ENCUT: 500
   IBRION: 2
@@ -118,9 +121,9 @@ INCAR:
   LWAVE: false
   MAGMOM: 0
   NELM: 100
+  NELMIN: 8
   NSW: 99
-  PREC: Accurate
-  PRECFOCK: Fast
+  PREC: Normal
 KPOINTS:
   reciprocal_density: 30
 POTCAR:
