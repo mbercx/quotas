@@ -56,7 +56,7 @@ def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
 
                     print("Found an even number of layers, but the user " +
                           "requested an odd number of fixed layers. Adding "
-                          "one layer to the fixed part.")
+                          "one layer to the fixed part of the slab.")
                     thickness += 1
 
             # Odd number of layers
@@ -67,7 +67,7 @@ def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
                 if thickness % 2 == 0:
                     print("Found an odd number of layers, but the user " +
                           "requested an even number of fixed layers. Adding "
-                          "one layer to the fixed part.")
+                          "one layer to the fixed part of the slab.")
                     thickness += 1
 
             # Calculate the number of layers to optimiz on each site

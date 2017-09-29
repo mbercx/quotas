@@ -3,6 +3,7 @@ import os
 import string
 
 from quotas.calculation import slabRelaxSet
+from quotas.slab import find_atomic_layers
 from pymatgen.core.structure import Structure
 from pymatgen.core.surface import SlabGenerator
 
@@ -63,13 +64,20 @@ def slab_setup(filename, miller_indices, thickness, vacuum, fix_part,
             slabs.remove(slab)
 
     if verbose:
-        print("Found " + str(len(slabs)) + " non-polar slab terminations.")
+        print("Found " + str(len(slabs)) + " non-polar slab termination(s).")
 
     current_dir = os.path.dirname(".")
 
     slab_letter_counter = 0
 
+    if verbose:
+        print("Setting up geometry optimizations...")
+
     for slab in slabs:
+
+        if verbose:
+            print("Number of layers in slab: " +
+                  str(len(find_atomic_layers(slab))))
 
         slab.sort(key=lambda site: site.properties["magmom"])
         slab.sort()
@@ -88,6 +96,9 @@ def slab_setup(filename, miller_indices, thickness, vacuum, fix_part,
 
         geo_optimization.write_input(os.path.join(current_dir, geo_dir,
                                                   relax_dir))
+
+        if verbose:
+            print("Written input files to " + relax_dir)
 
 
 

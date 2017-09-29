@@ -37,7 +37,7 @@ def setup():
 @click.option("--fix_thickness", "-b", default=8,
               help="Number of layers fixed as bulk in the geometry "
                    "optimization.")
-@click.option("-verbose", "-v", is_flag=True)
+@click.option("--verbose", "-v", is_flag=True)
 def slab(miller_indices, filename, vacuum, thickness, fix_part, fix_thickness,
          verbose):
     """
