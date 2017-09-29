@@ -12,7 +12,7 @@ Setup scripts for the calculations of the quotas package.
 """
 
 def slab_setup(filename, miller_indices, thickness, vacuum, fix_part,
-               fix_thickness):
+               fix_thickness, verbose):
     """
     Set up all the calculations to study the slab of a structure.
 
@@ -26,19 +26,44 @@ def slab_setup(filename, miller_indices, thickness, vacuum, fix_part,
     Returns:
 
     """
+
+    if verbose:
+        print("Importing bulk structure...")
+
     # Import the bulk structure
     bulk_structure = Structure.from_file(filename)
 
+    # If no magnetic configuration is given, start the calculation in a
+    # non-magnetic state.
+    if not "magmom" in bulk_structure.site_properties.keys():
+
+        if verbose:
+            print("No magnetic configuration found. Adding magmom = 0 for all "
+                  "sites.")
+
+        bulk_structure.add_site_property("magmom",
+                                         [0]*len(bulk_structure.sites))
+
     #TODO write checks for oxidation states etc
+
+    if verbose:
+        print("Generating slab terminations...")
 
     # Generate the various terminations of the surface
     slabs = SlabGenerator(bulk_structure, miller_indices,
                           thickness, vacuum).get_slabs()
 
+    if verbose:
+        print("Number of slabs found = " + str(len(slabs)))
+        print("Removing polar slab terminations...")
+
     # Remove the polar slabs
     for slab in slabs.copy():
         if slab.is_polar():
             slabs.remove(slab)
+
+    if verbose:
+        print("Found " + str(len(slabs)) + " non-polar slab terminations.")
 
     current_dir = os.path.dirname(".")
 
@@ -48,8 +73,6 @@ def slab_setup(filename, miller_indices, thickness, vacuum, fix_part,
 
         slab.sort(key=lambda site: site.properties["magmom"])
         slab.sort()
-
-        print(slab.site_properties)
 
         geo_optimization = slabRelaxSet(slab, potcar_functional="PBE_54")
         geo_optimization.fix_slab_bulk(thickness=fix_thickness,
