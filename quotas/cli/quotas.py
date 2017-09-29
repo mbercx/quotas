@@ -2,7 +2,7 @@
 
 import click
 
-"""
+""" 
 Command line interface for the quotas package.
 
 """
@@ -28,7 +28,7 @@ def setup():
 @setup.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("miller_indices", nargs=1)
 @click.argument("filename", nargs=1)
-@click.option("--vacuum", "-v", default=float(15),
+@click.option("--vacuum", "-V", default=float(15),
               help="Minimum thickness of the vacuum layer.")
 @click.option("--thickness", "-t", default=20,
               help="Minimum thickness of the slab, in Angstroms.")
@@ -37,7 +37,9 @@ def setup():
 @click.option("--fix_thickness", "-b", default=8,
               help="Number of layers fixed as bulk in the geometry "
                    "optimization.")
-def slab(miller_indices, filename, vacuum, thickness, fix_part, fix_thickness):
+@click.option("-verbose", "-v", is_flag=True)
+def slab(miller_indices, filename, vacuum, thickness, fix_part, fix_thickness,
+         verbose):
     """
     Set up all the calculations for a specific surface of a structure.
     """
@@ -51,4 +53,5 @@ def slab(miller_indices, filename, vacuum, thickness, fix_part, fix_thickness):
                thickness=thickness,
                vacuum=vacuum,
                fix_part=fix_part,
-               fix_thickness=fix_thickness)
+               fix_thickness=fix_thickness,
+               verbose=verbose)
