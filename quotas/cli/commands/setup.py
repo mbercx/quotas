@@ -75,9 +75,10 @@ def slab_setup(filename, miller_indices, thickness, vacuum, fix_part,
 
     for slab in slabs:
 
+        n_atomic_layers = len(find_atomic_layers(slab))
+
         if verbose:
-            print("Number of layers in slab: " +
-                  str(len(find_atomic_layers(slab))))
+            print("Number of layers in slab: " + str(n_atomic_layers))
 
         slab.sort(key=lambda site: site.properties["magmom"])
         slab.sort()
@@ -90,7 +91,8 @@ def slab_setup(filename, miller_indices, thickness, vacuum, fix_part,
         slab_letter_counter += 1
 
         geo_dir = "".join([str(number) for number in miller_indices]) + "_" \
-                    + slab_letter + "_" + str(thickness) + "l"
+                    + slab_letter + "_" + str(n_atomic_layers) + "l" \
+                    + str(vacuum) + "v"
 
         relax_dir = "".join([fix_part, "_relax"])
 
