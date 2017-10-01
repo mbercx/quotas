@@ -124,7 +124,7 @@ INCAR:
   NSW: 300
   PREC: Normal
 KPOINTS:
-  reciprocal_density: 30
+  reciprocal_density: 50
 POTCAR:
   Ac: Ac
   Ag: Ag
