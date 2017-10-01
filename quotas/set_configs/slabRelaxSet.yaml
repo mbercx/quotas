@@ -7,8 +7,7 @@ INCAR:
   EDIFF: 1.0e-04
   ENCUT: 500
   IBRION: 2
-  ICHARG: 1
-  ISIF: 3
+  ISIF: 2
   ISMEAR: 0
   SIGMA: 0.05
   ISPIN: 2
@@ -122,7 +121,7 @@ INCAR:
   MAGMOM: 0
   NELM: 100
   NELMIN: 8
-  NSW: 99
+  NSW: 300
   PREC: Normal
 KPOINTS:
   reciprocal_density: 30
