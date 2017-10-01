@@ -4,8 +4,9 @@ import quotas.slab as slab
 
 from monty.serialization import loadfn
 
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.vasp.sets import DictSet
-from pymatgen.io.vasp.inputs import Poscar
+from pymatgen.io.vasp.inputs import Poscar, Kpoints
 
 """
 Package that defines the various calculations required for the quotas script.
@@ -32,11 +33,12 @@ class slabRelaxSet(DictSet):
 
     CONFIG = _load_yaml_config("slabRelaxSet")
 
-    def __init__(self, structure, **kwargs):
+    def __init__(self, structure, k_product=50, **kwargs):
         super(slabRelaxSet, self).__init__(structure, slabRelaxSet.CONFIG,
                                            **kwargs)
-        self.kwargs = kwargs
+        self.k_product = k_product
         self.selective_dynamics = None
+        self.kwargs = kwargs
 
     def fix_slab_bulk(self, thickness, method="layers", part="center"):
         """
@@ -70,12 +72,51 @@ class slabRelaxSet(DictSet):
     @property
     def poscar(self):
         """
+        Similar to the standard POSCAR, but with selective dynamics added.
 
         Returns:
-
+            :class: pymatgen.io.vasp.inputs.Poscar
         """
         return Poscar(self.structure,
                       selective_dynamics=self.selective_dynamics)
 
+    @property
+    def kpoints(self):
+        """
+        Sets up the k-points for the slab relaxation.
+
+        For slabs, the number of
+        k-points corresponding to the third reciprocal lattice vector is set
+        to 1. The number of k-point divisions in the other two directions is
+        determined by the length of the corresponding lattice vector, by making
+        sure the product of the number of k-points and the length of the
+        corresponding lattice vector is equal to k_product, defined in the
+        initialization of the slab calculation.
+
+        Returns:
+            :class: pymatgen.io.vasp.inputs.Kpoints
+
+        """
+
+        # Use k_product to calculate kpoints
+        abc = self.structure.lattice.abc
+        kpt_calc = [int(self.k_product/abc[0]+0.5),
+                    int(self.k_product/abc[1]+0.5), 1]
+
+        kpoints = Kpoints.gamma_automatic(kpts=kpt_calc)
+
+        return kpoints
+
+def find_suitable_kpar(structure, kpoints):
+    """
+
+    :param structure:
+    :param kpoints:
+    :return:
+    """
+
+    spg = SpacegroupAnalyzer(structure)
+
+    return len(spg.get_ir_reciprocal_mesh(kpoints.kpts))
 
 

@@ -18,6 +18,17 @@ def main():
     """
     pass
 
+@main.command(context_settings=CONTEXT_SETTINGS)
+def nkp():
+    """
+    Quickly find the number of kpoints based on the input files in the current
+    directory.
+    """
+    from quotas.cli.commands.setup import find_n_irr_kpoints
+
+    find_n_irr_kpoints(directory=".")
+
+
 @main.group(context_settings=CONTEXT_SETTINGS)
 def setup():
     """

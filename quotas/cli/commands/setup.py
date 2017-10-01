@@ -2,10 +2,12 @@
 import os
 import string
 
-from quotas.calculation import slabRelaxSet
+from quotas.calculation import slabRelaxSet, find_suitable_kpar
 from quotas.slab import find_atomic_layers
+
 from pymatgen.core.structure import Structure
 from pymatgen.core.surface import SlabGenerator
+from pymatgen.io.vasp.inputs import Kpoints
 
 """
 Setup scripts for the calculations of the quotas package.
@@ -102,8 +104,14 @@ def slab_setup(filename, miller_indices, thickness, vacuum, fix_part,
         if verbose:
             print("Written input files to " + relax_dir)
 
+def find_n_irr_kpoints(directory):
+    """
 
+    :return:
+    """
+    input_dir = os.path.abspath(directory)
+    structure = Structure.from_file(os.path.join(input_dir, "POSCAR"))
+    kpoints = Kpoints.from_file(os.path.join(input_dir, "KPOINTS"))
 
-
-
+    print(find_suitable_kpar(structure, kpoints))
 
