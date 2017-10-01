@@ -12,6 +12,6 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        quotas=quotas.cli.quotas:main
+        quotas=quotas.cli.cli:main
     ''',
 )
