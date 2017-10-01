@@ -92,7 +92,7 @@ def slab_setup(filename, miller_indices, thickness, vacuum, fix_part,
 
         geo_dir = "".join([str(number) for number in miller_indices]) + "_" \
                     + slab_letter + "_" + str(n_atomic_layers) + "l" \
-                    + str(vacuum) + "v"
+                    + str(int(vacuum)) + "v"
 
         relax_dir = "".join([fix_part, "_relax"])
 
