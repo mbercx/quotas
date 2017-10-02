@@ -11,6 +11,7 @@ INCAR:
   ISMEAR: 0
   SIGMA: 0.05
   ISPIN: 2
+  LCHARG: false
   LDAU: true
   LDAUJ:
     F:

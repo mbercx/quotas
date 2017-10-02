@@ -104,6 +104,14 @@ def slab_setup(filename, miller_indices, thickness, vacuum, fix_part,
         if verbose:
             print("Written input files to " + relax_dir)
 
+def work_function(relax_dir):
+    """
+    Set up the work function calculation based on the output of the geometry
+    optimization.
+
+    """
+
+
 def find_n_irr_kpoints(directory):
     """
 

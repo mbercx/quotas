@@ -4,6 +4,7 @@ import quotas.slab as slab
 
 from monty.serialization import loadfn
 
+from pymatgen.core.structure import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.vasp.sets import DictSet
 from pymatgen.io.vasp.inputs import Poscar, Kpoints
@@ -106,6 +107,59 @@ class slabRelaxSet(DictSet):
         kpoints = Kpoints.gamma_automatic(kpts=kpt_calc)
 
         return kpoints
+
+class slabWorkFunctionSet():
+    """
+    A VASP input set that can be used to calculate the work function of a slab.
+    """
+
+    CONFIG = _load_yaml_config("slabWorkFunctionSet")
+
+    def __init__(self, structure, k_product=50, **kwargs):
+        super(slabWorkFunctionSet, self).__init__(structure, slabRelaxSet.CONFIG,
+                                           **kwargs)
+        self.k_product = k_product
+        self.kwargs = kwargs
+
+    @property
+    def kpoints(self):
+        """
+        Sets up the k-points for the slab relaxation.
+
+        For slabs, the number of
+        k-points corresponding to the third reciprocal lattice vector is set
+        to 1. The number of k-point divisions in the other two directions is
+        determined by the length of the corresponding lattice vector, by making
+        sure the product of the number of k-points and the length of the
+        corresponding lattice vector is equal to k_product, defined in the
+        initialization of the slab calculation.
+
+        Returns:
+            :class: pymatgen.io.vasp.inputs.Kpoints
+
+        """
+
+        # Use k_product to calculate kpoints
+        abc = self.structure.lattice.abc
+        kpt_calc = [int(self.k_product / abc[0] + 0.5),
+                    int(self.k_product / abc[1] + 0.5), 1]
+
+        kpoints = Kpoints.gamma_automatic(kpts=kpt_calc)
+
+        return kpoints
+
+    @staticmethod
+    def from_relax_calc(relax_dir):
+        """
+        Set up the calculation based on the output of the geometry
+        optimization.
+
+        """
+        relax_dir = os.path.abspath(relax_dir)
+        structure = Structure.from_file(os.path.join(relax_dir, "CONTCAR"))
+
+
+
 
 def find_suitable_kpar(structure, kpoints):
     """
