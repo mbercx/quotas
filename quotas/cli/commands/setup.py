@@ -2,7 +2,8 @@
 import os
 import string
 
-from quotas.calculation import slabRelaxSet, find_suitable_kpar
+from quotas.calculation import slabRelaxSet, slabWorkFunctionSet,\
+    find_suitable_kpar
 from quotas.slab import find_atomic_layers
 
 from pymatgen.core.structure import Structure
@@ -104,12 +105,19 @@ def slab_setup(filename, miller_indices, thickness, vacuum, fix_part,
         if verbose:
             print("Written input files to " + relax_dir)
 
-def work_function(relax_dir):
+def work_function_calc(relax_dir):
     """
     Set up the work function calculation based on the output of the geometry
     optimization.
 
     """
+    relax_dir = os.path.abspath(relax_dir)
+
+    work_function_calc = slabWorkFunctionSet.from_relax_calc(relax_dir)
+
+    wf_calc_dir = os.path.join(os.path.split(relax_dir)[0], "work_function")
+
+    work_function_calc.write_input(wf_calc_dir)
 
 
 def find_n_irr_kpoints(directory):

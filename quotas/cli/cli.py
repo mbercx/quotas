@@ -66,3 +66,15 @@ def slab(miller_indices, filename, vacuum, thickness, fix_part, fix_thickness,
                fix_part=fix_part,
                fix_thickness=fix_thickness,
                verbose=verbose)
+
+@setup.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("relax_dir", nargs=1)
+def wf(relax_dir):
+    """
+    Set up the work function calculation, based on the output of the geometry
+    optimization.
+
+    """
+    from quotas.cli.commands.setup import work_function_calc
+
+    work_function_calc(relax_dir=relax_dir)

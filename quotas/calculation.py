@@ -7,7 +7,7 @@ from monty.serialization import loadfn
 from pymatgen.core.structure import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.vasp.sets import DictSet
-from pymatgen.io.vasp.inputs import Poscar, Kpoints
+from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar
 
 """
 Package that defines the various calculations required for the quotas script.
@@ -35,7 +35,8 @@ class slabRelaxSet(DictSet):
     CONFIG = _load_yaml_config("slabRelaxSet")
 
     def __init__(self, structure, k_product=50, **kwargs):
-        super(slabRelaxSet, self).__init__(structure, slabRelaxSet.CONFIG,
+        super(slabRelaxSet, self).__init__(structure=structure,
+                                           config_dict=slabRelaxSet.CONFIG,
                                            **kwargs)
         self.k_product = k_product
         self.selective_dynamics = None
@@ -108,7 +109,7 @@ class slabRelaxSet(DictSet):
 
         return kpoints
 
-class slabWorkFunctionSet():
+class slabWorkFunctionSet(DictSet):
     """
     A VASP input set that can be used to calculate the work function of a slab.
     """
@@ -116,8 +117,10 @@ class slabWorkFunctionSet():
     CONFIG = _load_yaml_config("slabWorkFunctionSet")
 
     def __init__(self, structure, k_product=50, **kwargs):
-        super(slabWorkFunctionSet, self).__init__(structure, slabRelaxSet.CONFIG,
-                                           **kwargs)
+        super(slabWorkFunctionSet,
+              self).__init__(structure=structure,
+                             config_dict=slabWorkFunctionSet.CONFIG,
+                             **kwargs)
         self.k_product = k_product
         self.kwargs = kwargs
 
@@ -156,9 +159,22 @@ class slabWorkFunctionSet():
 
         """
         relax_dir = os.path.abspath(relax_dir)
-        structure = Structure.from_file(os.path.join(relax_dir, "CONTCAR"))
 
+        # Obtain the structure from the CONTCAR file of the VASP calculation
+        try:
+            structure = Structure.from_file(os.path.join(relax_dir, "CONTCAR"))
+        except FileNotFoundError:
+            structure = Structure.from_file(os.path.join(relax_dir,
+                                                         "CONTCAR.vasp"))
 
+        # Initialize the magnetic configuration in the same way as for the
+        # geometry optimization
+        incar = Incar.from_file(os.path.join(relax_dir, "INCAR"))
+        magmom = incar["MAGMOM"]
+        structure.add_site_property("magmom",magmom)
+
+        return slabWorkFunctionSet(structure=structure,
+                                   potcar_functional="PBE_54")
 
 
 def find_suitable_kpar(structure, kpoints):
