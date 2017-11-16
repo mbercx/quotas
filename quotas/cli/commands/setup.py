@@ -3,17 +3,22 @@ import os
 import string
 
 from quotas.calculation import slabRelaxSet, slabWorkFunctionSet,\
-    find_suitable_kpar
+    find_suitable_kpar, find_irr_kpoints
 from quotas.slab import find_atomic_layers
 
 from pymatgen.core.structure import Structure
 from pymatgen.core.surface import SlabGenerator
-from pymatgen.io.vasp.inputs import Kpoints
+from pymatgen.io.vasp.inputs import Kpoints, Incar
 
 """
 Setup scripts for the calculations of the quotas package.
 
 """
+
+# Parameters
+MAX_KPAR = 30
+DFT_FUNCTIONAL = "PBE_54"
+#TODO Find way to make potential setting more user friendly
 
 def slab_setup(filename, miller_indices, thickness, vacuum, fix_part,
                fix_thickness, verbose):
@@ -86,7 +91,7 @@ def slab_setup(filename, miller_indices, thickness, vacuum, fix_part,
         slab.sort(key=lambda site: site.properties["magmom"])
         slab.sort()
 
-        geo_optimization = slabRelaxSet(slab, potcar_functional="PBE_54")
+        geo_optimization = slabRelaxSet(slab, potcar_functional=DFT_FUNCTIONAL)
         geo_optimization.fix_slab_bulk(thickness=fix_thickness,
                                        part=fix_part)
 
@@ -99,13 +104,17 @@ def slab_setup(filename, miller_indices, thickness, vacuum, fix_part,
 
         relax_dir = "".join([fix_part, "_relax"])
 
-        geo_optimization.write_input(os.path.join(current_dir, geo_dir,
-                                                  relax_dir))
+        calculation_dir = os.path.join(current_dir, geo_dir, relax_dir)
+
+        geo_optimization.write_input(calculation_dir)
+
+        # Add the KPAR tag to the INCAR file
+        kpar(directory=calculation_dir, max_kpar=MAX_KPAR, add_kpar=True)
 
         if verbose:
-            print("Written input files to " + relax_dir)
+            print("Written input files to " + calculation_dir)
 
-def work_function_calc(relax_dir):
+def work_function_calc(relax_dir, k_product):
     """
     Set up the work function calculation based on the output of the geometry
     optimization.
@@ -113,14 +122,40 @@ def work_function_calc(relax_dir):
     """
     relax_dir = os.path.abspath(relax_dir)
 
-    work_function_calc = slabWorkFunctionSet.from_relax_calc(relax_dir)
+    # Set up the calculation
+    work_function_calc = \
+        slabWorkFunctionSet.from_relax_calc(relax_dir, k_product=k_product)
 
-    wf_calc_dir = os.path.join(os.path.split(relax_dir)[0], "work_function")
+    calculation_dir = os.path.join(os.path.split(relax_dir)[0], "work_function")
 
-    work_function_calc.write_input(wf_calc_dir)
+    # Write the input files of the calculation
+    work_function_calc.write_input(calculation_dir)
+
+    # Add the KPAR tag to the INCAR file
+    kpar(directory=calculation_dir, max_kpar=MAX_KPAR, add_kpar=True)
+
+def DOS_calc(relax_dir, k_product):
+    """
+    Set up the work function calculation based on the output of the geometry
+    optimization.
+
+    """
+    relax_dir = os.path.abspath(relax_dir)
+
+    # Set up the calculation
+    DOS_calc = slabWorkFunctionSet.from_relax_calc(relax_dir=relax_dir,
+                                                   k_product=k_product)
+
+    calculation_dir = os.path.join(os.path.split(relax_dir)[0], "dos")
+
+    # Write the input files of the calculation
+    DOS_calc.write_input(calculation_dir)
+
+    # Add the KPAR tag to the INCAR file
+    kpar(directory=calculation_dir, max_kpar=MAX_KPAR, add_kpar=True)
 
 
-def find_n_irr_kpoints(directory):
+def kpar(directory, max_kpar, add_kpar):
     """
 
     :return:
@@ -129,5 +164,36 @@ def find_n_irr_kpoints(directory):
     structure = Structure.from_file(os.path.join(input_dir, "POSCAR"))
     kpoints = Kpoints.from_file(os.path.join(input_dir, "KPOINTS"))
 
-    print(find_suitable_kpar(structure, kpoints))
+    suggested_kpar = str(find_suitable_kpar(structure, kpoints, max_kpar))
+    print("Suggested KPAR based on divisors of the number of kpoints = " +
+          suggested_kpar)
 
+    if add_kpar:
+        print("Adding KPAR tag to INCAR file.")
+
+        try:
+            incar = Incar.from_file(os.path.join(directory, "INCAR"))
+        except FileNotFoundError:
+            raise FileNotFoundError("The INCAR file is not found in the "
+                                    "directory.")
+
+        incar["KPAR"] = suggested_kpar
+        incar.write_file(os.path.join(directory, "INCAR"))
+
+
+def nkp(directory):
+    """
+
+    Args:
+        directory:
+
+    Returns:
+
+    """
+
+    input_dir = os.path.abspath(directory)
+    structure = Structure.from_file(os.path.join(input_dir, "POSCAR"))
+    kpoints = Kpoints.from_file(os.path.join(input_dir, "KPOINTS"))
+
+    print("Number of irreducible kpoints = " +
+          str(find_irr_kpoints(structure, kpoints)))

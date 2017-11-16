@@ -7,7 +7,7 @@ Command line interface for the quotas package.
 
 """
 
-# This is only used to make '-h' a shorter way to access the CLI help
+# This is used to make '-h' a shorter way to access the CLI help
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 @click.group(context_settings=CONTEXT_SETTINGS)
@@ -19,14 +19,33 @@ def main():
     pass
 
 @main.command(context_settings=CONTEXT_SETTINGS)
-def nkp():
+@click.option("--directory", "-d", default=".")
+@click.option("--max_kpar", "-m", default=30,
+              help="Maximum value for KPAR, usually determined by the "
+                   "number of nodes at the user's disposal.")
+@click.option("--add_kpar", "-a", is_flag=True,
+              help="Add the KPAR tag to the INCAR file.")
+def kpar(directory, max_kpar, add_kpar):
+    """
+    Find a suitable value for KPAR.
+    """
+    from quotas.cli.commands.setup import kpar
+
+    kpar(directory=directory,
+         max_kpar=max_kpar,
+         add_kpar=add_kpar)
+
+
+@main.command(context_settings=CONTEXT_SETTINGS)
+@click.option("--directory", "-d", default=".")
+def nkp(directory):
     """
     Quickly find the number of kpoints based on the input files in the current
     directory.
     """
-    from quotas.cli.commands.setup import find_n_irr_kpoints
+    from quotas.cli.commands.setup import nkp
 
-    find_n_irr_kpoints(directory=".")
+    nkp(directory=directory)
 
 
 @main.group(context_settings=CONTEXT_SETTINGS)
@@ -69,7 +88,8 @@ def slab(miller_indices, filename, vacuum, thickness, fix_part, fix_thickness,
 
 @setup.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("relax_dir", nargs=1)
-def wf(relax_dir):
+@click.option("--k_product", "-k", default=50)
+def wf(relax_dir, k_product):
     """
     Set up the work function calculation, based on the output of the geometry
     optimization.
@@ -77,4 +97,20 @@ def wf(relax_dir):
     """
     from quotas.cli.commands.setup import work_function_calc
 
-    work_function_calc(relax_dir=relax_dir)
+    work_function_calc(relax_dir=relax_dir,
+                       k_product=k_product)
+
+
+@setup.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("relax_dir", nargs=1)
+@click.option("--k_product", "-k", default=80)
+def dos(relax_dir, k_product):
+    """
+    Set up the DOS calculation, based on the output of the geometry
+    optimization.
+
+    """
+    from quotas.cli.commands.setup import DOS_calc
+
+    DOS_calc(relax_dir=relax_dir,
+             k_product=k_product)

@@ -16,6 +16,7 @@ Package that defines the various calculations required for the quotas script.
 
 MODULE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                           "set_configs")
+DFT_FUNCTIONAL = "PBE_54"
 
 def _load_yaml_config(fname):
     config = loadfn(os.path.join(MODULE_DIR, "%s.yaml" % fname))
@@ -152,7 +153,7 @@ class slabWorkFunctionSet(DictSet):
         return kpoints
 
     @staticmethod
-    def from_relax_calc(relax_dir):
+    def from_relax_calc(relax_dir, k_product):
         """
         Set up the calculation based on the output of the geometry
         optimization.
@@ -160,6 +161,7 @@ class slabWorkFunctionSet(DictSet):
         """
         relax_dir = os.path.abspath(relax_dir)
 
+        #TODO this can be made more general
         # Obtain the structure from the CONTCAR file of the VASP calculation
         try:
             structure = Structure.from_file(os.path.join(relax_dir, "CONTCAR"))
@@ -174,10 +176,10 @@ class slabWorkFunctionSet(DictSet):
         structure.add_site_property("magmom",magmom)
 
         return slabWorkFunctionSet(structure=structure,
-                                   potcar_functional="PBE_54")
+                                   k_product=k_product,
+                                   potcar_functional=DFT_FUNCTIONAL)
 
-
-def find_suitable_kpar(structure, kpoints):
+def find_suitable_kpar(structure, kpoints, max_kpar=30):
     """
 
     :param structure:
@@ -187,6 +189,42 @@ def find_suitable_kpar(structure, kpoints):
 
     spg = SpacegroupAnalyzer(structure)
 
+    kpar = len(spg.get_ir_reciprocal_mesh(kpoints.kpts))
+    divisors = generate_divisors(kpar)
+
+    while kpar > max_kpar:
+        kpar = next(divisors)
+
+    return kpar
+
+def find_irr_kpoints(structure, kpoints):
+    """
+
+    :param structure:
+    :param kpoints:
+    :return:
+    """
+
+    spg = SpacegroupAnalyzer(structure)
+
+    #TODO Find and fix bug!
     return len(spg.get_ir_reciprocal_mesh(kpoints.kpts))
 
+def generate_divisors(number):
+    """
 
+    Args:
+        number:
+
+    Returns:
+
+    """
+    divisor = int(number/2)
+
+    while divisor != 0:
+
+        while number%divisor != 0:
+            divisor -= 1
+
+        yield divisor
+        divisor -= 1
