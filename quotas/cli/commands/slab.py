@@ -1,6 +1,7 @@
 
 import os
 import string
+from warnings import warn
 
 from quotas.calculation import slabRelaxSet, slabWorkFunctionSet,\
     find_suitable_kpar, find_irr_kpoints
@@ -28,6 +29,12 @@ def setup(bulk_file, miller_indices, thickness, vacuum, verbose):
     # Import the bulk structure
     bulk_structure = Structure.from_file(bulk_file)
 
+    try:
+        test = bulk_structure.sites[0].specie.oxi_state
+    except AttributeError:
+        print("WARNING: No oxidation decoration found. Cannot properly "
+              "determine slab polarity.")
+
     # If no magnetic configuration is given, start the calculation in a
     # non-magnetic state.
     if not "magmom" in bulk_structure.site_properties.keys():
@@ -38,8 +45,6 @@ def setup(bulk_file, miller_indices, thickness, vacuum, verbose):
 
         bulk_structure.add_site_property("magmom",
                                          [0]*len(bulk_structure.sites))
-
-    #TODO write checks for oxidation states etc
 
     if verbose:
         print("Generating slab terminations...")
@@ -73,9 +78,9 @@ def setup(bulk_file, miller_indices, thickness, vacuum, verbose):
         slab_letter = string.ascii_lowercase[slab_letter_counter]
         slab_letter_counter += 1
 
-        slab_file = bulk_file.split(".")[0].join(
-                    [str(number) for number in miller_indices]
-                    ) \
+        slab_file = bulk_file.split(".")[0] + "_" + "".join([
+                str(number) for number in miller_indices]
+                ) \
                   + "_" + slab_letter + "_" + str(n_atomic_layers) + "l" \
                   + str(int(vacuum)) + "v"
 
@@ -83,7 +88,12 @@ def setup(bulk_file, miller_indices, thickness, vacuum, verbose):
         if slab.is_polar():
             slab_file += "_polar"
 
-        slab.to("json", slab_file)
+        # Directly writing a slab to a json doesn't seem to work. So as a
+        # workaround, I'll define a structure for each slab with the slab
+        # properties
+        slab_structure = Structure(slab.lattice, slab.species, slab.frac_coords,
+                                   site_properties=slab.site_properties)
+        slab_structure.to(fmt="json", filename=slab_file+".json")
 
 def relax(slab_file, fix_part, fix_thickness, verbose):
     pass

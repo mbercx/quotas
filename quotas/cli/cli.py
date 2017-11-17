@@ -21,17 +21,29 @@ def main():
 @main.group()
 def slab():
     """
-    A set of scripts to set up slab calculations.
+    Set up slab calculations.
     """
     pass
 
 
 @slab.command(context_settings=CONTEXT_SETTINGS)
-def setup():
+@click.argument("miller_indices", nargs=1)
+@click.argument("bulk_file", nargs=1)
+@click.option("--vacuum", "-V", default=float(15),
+              help="Minimum thickness of the vacuum layer.")
+@click.option("--thickness", "-t", default=20,
+              help="Minimum thickness of the slab, in Angstroms.")
+@click.option("--verbose", "-v", is_flag=True)
+def setup(bulk_file, miller_indices, vacuum, thickness, verbose):
     """
     Set up slabs from the bulk geometry.
     """
-    pass
+    from quotas.cli.commands.slab import setup
+
+    #TODO Add checks for the miller_indices
+    miller_indices = [int(number) for number in miller_indices]
+
+    setup(bulk_file, miller_indices, thickness, vacuum, verbose)
 
 
 @slab.command(context_settings=CONTEXT_SETTINGS)
@@ -61,7 +73,7 @@ def dos():
 @main.group(context_settings=CONTEXT_SETTINGS)
 def bulk():
     """
-    A set of scripts to set up bulk calculations.
+    Set up bulk calculations.
     """
     pass
 
@@ -82,70 +94,70 @@ def dos():
     pass
 
 
-@setup.command(context_settings=CONTEXT_SETTINGS)
-@click.argument("miller_indices", nargs=1)
-@click.argument("filename", nargs=1)
-@click.option("--vacuum", "-V", default=float(15),
-              help="Minimum thickness of the vacuum layer.")
-@click.option("--thickness", "-t", default=20,
-              help="Minimum thickness of the slab, in Angstroms.")
-@click.option("--fix_part", "-f", default="center",
-              help="Part of the slab to fix in the geometry optimization.")
-@click.option("--fix_thickness", "-b", default=8,
-              help="Number of layers fixed as bulk in the geometry "
-                   "optimization.")
-@click.option("--verbose", "-v", is_flag=True)
-def slab(miller_indices, filename, vacuum, thickness, fix_part, fix_thickness,
-         verbose):
-    """
-    Set up all the calculations for a specific surface of a structure.
-    """
-    from quotas.cli.commands.slab import slab_setup
-
-    #TODO Add checks for the miller_indices
-    miller_indices = [int(number) for number in miller_indices]
-
-    slab_setup(bulk_file=filename,
-               miller_indices=miller_indices,
-               thickness=thickness,
-               vacuum=vacuum,
-               fix_part=fix_part,
-               fix_thickness=fix_thickness,
-               verbose=verbose)
-
-@setup.command(context_settings=CONTEXT_SETTINGS)
-@click.argument("relax_dir", nargs=1)
-@click.option("--k_product", "-k", default=50)
-def wf(relax_dir, k_product):
-    """
-    Set up the work function calculation, based on the output of the geometry
-    optimization.
-
-    """
-    from quotas.cli.commands.slab import work_function_calc
-
-    work_function_calc(relax_dir=relax_dir,
-                       k_product=k_product)
-
-
-@setup.command(context_settings=CONTEXT_SETTINGS)
-@click.argument("relax_dir", nargs=1)
-@click.option("--k_product", "-k", default=80)
-def dos(relax_dir, k_product):
-    """
-    Set up the DOS calculation, based on the output of the geometry
-    optimization.
-
-    """
-    from quotas.cli.commands.slab import DOS_calc
-
-    DOS_calc(relax_dir=relax_dir,
-             k_product=k_product)
+# @setup.command(context_settings=CONTEXT_SETTINGS)
+# @click.argument("miller_indices", nargs=1)
+# @click.argument("filename", nargs=1)
+# @click.option("--vacuum", "-V", default=float(15),
+#               help="Minimum thickness of the vacuum layer.")
+# @click.option("--thickness", "-t", default=20,
+#               help="Minimum thickness of the slab, in Angstroms.")
+# @click.option("--fix_part", "-f", default="center",
+#               help="Part of the slab to fix in the geometry optimization.")
+# @click.option("--fix_thickness", "-b", default=8,
+#               help="Number of layers fixed as bulk in the geometry "
+#                    "optimization.")
+# @click.option("--verbose", "-v", is_flag=True)
+# def slab(miller_indices, filename, vacuum, thickness, fix_part, fix_thickness,
+#          verbose):
+#     """
+#     Set up all the calculations for a specific surface of a structure.
+#     """
+#     from quotas.cli.commands.slab import slab_setup
+#
+#     #TODO Add checks for the miller_indices
+#     miller_indices = [int(number) for number in miller_indices]
+#
+#     slab_setup(bulk_file=filename,
+#                miller_indices=miller_indices,
+#                thickness=thickness,
+#                vacuum=vacuum,
+#                fix_part=fix_part,
+#                fix_thickness=fix_thickness,
+#                verbose=verbose)
+#
+# @setup.command(context_settings=CONTEXT_SETTINGS)
+# @click.argument("relax_dir", nargs=1)
+# @click.option("--k_product", "-k", default=50)
+# def wf(relax_dir, k_product):
+#     """
+#     Set up the work function calculation, based on the output of the geometry
+#     optimization.
+#
+#     """
+#     from quotas.cli.commands.slab import work_function_calc
+#
+#     work_function_calc(relax_dir=relax_dir,
+#                        k_product=k_product)
+#
+#
+# @setup.command(context_settings=CONTEXT_SETTINGS)
+# @click.argument("relax_dir", nargs=1)
+# @click.option("--k_product", "-k", default=80)
+# def dos(relax_dir, k_product):
+#     """
+#     Set up the DOS calculation, based on the output of the geometry
+#     optimization.
+#
+#     """
+#     from quotas.cli.commands.slab import DOS_calc
+#
+#     DOS_calc(relax_dir=relax_dir,
+#              k_product=k_product)
 
 @main.group(context_settings=CONTEXT_SETTINGS)
 def util():
     """
-    A set of utility commands.
+    Utility commands.
     """
     pass
 
