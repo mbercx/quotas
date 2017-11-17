@@ -19,14 +19,38 @@ def main():
     pass
 
 @main.group()
+def slab():
+    """
+    A set of scripts to set up slab calculations.
+    """
+    pass
 
 
-
-
-@main.group(context_settings=CONTEXT_SETTINGS)
+@slab.command(context_settings=CONTEXT_SETTINGS)
 def setup():
     """
     Set up all calculations for the input required in the QUOTAS model.
+    """
+    pass
+
+@slab.command(context_settings=CONTEXT_SETTINGS)
+def relax():
+    """
+    Set up the geometry optimization.
+    """
+    pass
+
+@slab.command(context_settings=CONTEXT_SETTINGS)
+def wf():
+    """
+    Set up the work function calculation.
+    """
+    pass
+
+@slab.command(context_settings=CONTEXT_SETTINGS)
+def dos():
+    """
+    Set up the Density of states calculation.
     """
     pass
 
