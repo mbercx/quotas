@@ -4,7 +4,7 @@ import string
 
 from quotas.calculation import slabRelaxSet, slabWorkFunctionSet,\
     find_suitable_kpar, find_irr_kpoints
-from quotas.slab import find_atomic_layers
+from quotas.core import find_atomic_layers
 
 from pymatgen.core.structure import Structure
 from pymatgen.core.surface import SlabGenerator
@@ -148,8 +148,6 @@ def wf(relax_dir, k_product):
     # Write the input files of the calculation
     work_function_calc.write_input(calculation_dir)
 
-    # Add the KPAR tag to the INCAR file
-    kpar(directory=calculation_dir, max_kpar=MAX_KPAR, add_kpar=True)
 
 def dos(relax_dir, k_product):
     """
@@ -168,49 +166,3 @@ def dos(relax_dir, k_product):
     # Write the input files of the calculation
     DOS_calc.write_input(calculation_dir)
 
-    # Add the KPAR tag to the INCAR file
-    kpar(directory=calculation_dir, max_kpar=MAX_KPAR, add_kpar=True)
-
-
-def kpar(directory, max_kpar, add_kpar):
-    """
-
-    :return:
-    """
-    input_dir = os.path.abspath(directory)
-    structure = Structure.from_file(os.path.join(input_dir, "POSCAR"))
-    kpoints = Kpoints.from_file(os.path.join(input_dir, "KPOINTS"))
-
-    suggested_kpar = str(find_suitable_kpar(structure, kpoints, max_kpar))
-    print("Suggested KPAR based on divisors of the number of kpoints = " +
-          suggested_kpar)
-
-    if add_kpar:
-        print("Adding KPAR tag to INCAR file.")
-
-        try:
-            incar = Incar.from_file(os.path.join(directory, "INCAR"))
-        except FileNotFoundError:
-            raise FileNotFoundError("The INCAR file is not found in the "
-                                    "directory.")
-
-        incar["KPAR"] = suggested_kpar
-        incar.write_file(os.path.join(directory, "INCAR"))
-
-
-def nkp(directory):
-    """
-
-    Args:
-        directory:
-
-    Returns:
-
-    """
-
-    input_dir = os.path.abspath(directory)
-    structure = Structure.from_file(os.path.join(input_dir, "POSCAR"))
-    kpoints = Kpoints.from_file(os.path.join(input_dir, "KPOINTS"))
-
-    print("Number of irreducible kpoints = " +
-          str(find_irr_kpoints(structure, kpoints)))

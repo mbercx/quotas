@@ -1,12 +1,11 @@
 # Encoding: UTF-8
 
 from pymatgen.core.surface import SlabGenerator
-import pymatgen.core.structure as structure
 import string
 
 
 """
-A set of methods to aid in the setup of slab calculations.
+A set of methods to aid in the setup of slab calculations. 
 
 """
 
@@ -186,3 +185,56 @@ def write_all_slab_terminations(structure, miller_indices, min_slab_size,
         print("Written slab structure to " + filename)
         print("Slab is symmetric = " + str(slab.is_symmetric()))
         print("Slab is polar = " + str(slab.is_polar()))
+
+
+def find_suitable_kpar(structure, kpoints, max_kpar=30):
+    """
+
+    :param structure:
+    :param kpoints:
+    :return:
+    """
+
+    spg = SpacegroupAnalyzer(structure)
+
+    kpar = len(spg.get_ir_reciprocal_mesh(kpoints.kpts))
+    divisors = generate_divisors(kpar)
+
+    while kpar > max_kpar:
+        kpar = next(divisors)
+
+    return kpar
+
+
+def find_irr_kpoints(structure, kpoints):
+    """
+
+    :param structure:
+    :param kpoints:
+    :return:
+    """
+
+    spg = SpacegroupAnalyzer(structure)
+
+    #TODO Find and fix bug!
+    return len(spg.get_ir_reciprocal_mesh(kpoints.kpts))
+
+
+def generate_divisors(number):
+    """
+
+    Args:
+        number:
+
+    Returns:
+
+    """
+    divisor = int(number/2)
+
+    while divisor != 0:
+
+        while number%divisor != 0:
+            divisor -= 1
+
+        yield divisor
+        divisor -= 1

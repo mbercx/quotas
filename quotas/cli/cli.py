@@ -132,7 +132,7 @@ def kpar(directory, max_kpar, add_kpar):
     """
     Find a suitable value for KPAR.
     """
-    from quotas.cli.commands.slab import kpar
+    from quotas.cli.commands.util import kpar
 
     kpar(directory=directory,
          max_kpar=max_kpar,
@@ -146,6 +146,6 @@ def nkp(directory):
     Quickly find the number of kpoints based on the input files in the current
     directory.
     """
-    from quotas.cli.commands.slab import nkp
+    from quotas.cli.commands.util import nkp
 
     nkp(directory=directory)

@@ -1,11 +1,11 @@
+# Encoding: UTF-8
 
 import os
-import quotas.slab as slab
+import quotas.core as slab
 
 from monty.serialization import loadfn
 
 from pymatgen.core.structure import Structure
-from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.vasp.sets import DictSet
 from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar
 
@@ -179,52 +179,3 @@ class slabWorkFunctionSet(DictSet):
                                    k_product=k_product,
                                    potcar_functional=DFT_FUNCTIONAL)
 
-def find_suitable_kpar(structure, kpoints, max_kpar=30):
-    """
-
-    :param structure:
-    :param kpoints:
-    :return:
-    """
-
-    spg = SpacegroupAnalyzer(structure)
-
-    kpar = len(spg.get_ir_reciprocal_mesh(kpoints.kpts))
-    divisors = generate_divisors(kpar)
-
-    while kpar > max_kpar:
-        kpar = next(divisors)
-
-    return kpar
-
-def find_irr_kpoints(structure, kpoints):
-    """
-
-    :param structure:
-    :param kpoints:
-    :return:
-    """
-
-    spg = SpacegroupAnalyzer(structure)
-
-    #TODO Find and fix bug!
-    return len(spg.get_ir_reciprocal_mesh(kpoints.kpts))
-
-def generate_divisors(number):
-    """
-
-    Args:
-        number:
-
-    Returns:
-
-    """
-    divisor = int(number/2)
-
-    while divisor != 0:
-
-        while number%divisor != 0:
-            divisor -= 1
-
-        yield divisor
-        divisor -= 1
