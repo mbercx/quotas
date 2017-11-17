@@ -18,10 +18,8 @@ MODULE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                           "set_configs")
 DFT_FUNCTIONAL = "PBE_54"
 
-def _load_yaml_config(fname):
-    config = loadfn(os.path.join(MODULE_DIR, "%s.yaml" % fname))
-    # config["INCAR"].update(loadfn(os.path.join(MODULE_DIR,
-    #                                            "VASPIncarBase.yaml")))
+def _load_yaml_config(filename):
+    config = loadfn(os.path.join(MODULE_DIR, "%s.yaml" % filename))
     return config
 
 
@@ -30,11 +28,31 @@ class bulkRelaxSet(DictSet):
     VASP input set for the bulk relaxation.
 
     """
-    CONFIG = CONFIG = _load_yaml_config("MPRelaxSet")
+    CONFIG = CONFIG = _load_yaml_config("bulkRelaxSet")
 
     def __init__(self, structure, **kwargs):
         super(bulkRelaxSet, self).__init__(
             structure, bulkRelaxSet.CONFIG, **kwargs)
+        self.kwargs = kwargs
+
+
+class bulkDosSet(DictSet):
+
+    CONFIG = CONFIG = _load_yaml_config("bulkDosSet")
+
+    def __init__(self, structure, **kwargs):
+        super(bulkDosSet, self).__init__(
+            structure, bulkDosSet.CONFIG, **kwargs)
+        self.kwargs = kwargs
+
+
+class bulkHSEDosSet(DictSet):
+
+    CONFIG = CONFIG = _load_yaml_config("bulkHSEDosSet")
+
+    def __init__(self, structure, **kwargs):
+        super(bulkHSEDosSet, self).__init__(
+            structure, bulkHSEDosSet.CONFIG, **kwargs)
         self.kwargs = kwargs
 
 
