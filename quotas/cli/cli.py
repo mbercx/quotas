@@ -29,9 +29,10 @@ def slab():
 @slab.command(context_settings=CONTEXT_SETTINGS)
 def setup():
     """
-    Set up all calculations for the input required in the QUOTAS model.
+    Set up slabs from the bulk geometry.
     """
     pass
+
 
 @slab.command(context_settings=CONTEXT_SETTINGS)
 def relax():
@@ -40,6 +41,7 @@ def relax():
     """
     pass
 
+
 @slab.command(context_settings=CONTEXT_SETTINGS)
 def wf():
     """
@@ -47,12 +49,38 @@ def wf():
     """
     pass
 
+
 @slab.command(context_settings=CONTEXT_SETTINGS)
 def dos():
     """
     Set up the Density of states calculation.
     """
     pass
+
+
+@main.group(context_settings=CONTEXT_SETTINGS)
+def bulk():
+    """
+    A set of scripts to set up bulk calculations.
+    """
+    pass
+
+
+@bulk.command(context_settings=CONTEXT_SETTINGS)
+def relax():
+    """
+    Set up the geometry optimization.
+    """
+    pass
+
+
+@bulk.command(context_settings=CONTEXT_SETTINGS)
+def dos():
+    """
+    Set up the Density of states calculation.
+    """
+    pass
+
 
 @setup.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("miller_indices", nargs=1)
