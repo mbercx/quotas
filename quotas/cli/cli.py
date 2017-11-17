@@ -70,9 +70,9 @@ def wf(relax_dir, k_product):
     """
     Set up the work function calculation.
     """
-    from quotas.cli.commands.slab import work_function_calc
+    from quotas.cli.commands.slab import wf
 
-    work_function_calc(relax_dir=relax_dir,
+    wf(relax_dir=relax_dir,
                        k_product=k_product)
 
 
@@ -83,9 +83,9 @@ def dos(relax_dir, k_product):
     """
     Set up the Density of states calculation.
     """
-    from quotas.cli.commands.slab import DOS_calc
+    from quotas.cli.commands.slab import dos
 
-    DOS_calc(relax_dir=relax_dir,
+    dos(relax_dir=relax_dir,
              k_product=k_product)
 
 
