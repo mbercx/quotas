@@ -24,6 +24,20 @@ def _load_yaml_config(fname):
     #                                            "VASPIncarBase.yaml")))
     return config
 
+
+class bulkRelaxSet(DictSet):
+    """
+    VASP input set for the bulk relaxation.
+
+    """
+    CONFIG = CONFIG = _load_yaml_config("MPRelaxSet")
+
+    def __init__(self, structure, **kwargs):
+        super(bulkRelaxSet, self).__init__(
+            structure, bulkRelaxSet.CONFIG, **kwargs)
+        self.kwargs = kwargs
+
+
 class slabRelaxSet(DictSet):
     """
     A VASP input set that is used to optimize a slab structure.
