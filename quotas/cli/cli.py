@@ -18,34 +18,9 @@ def main():
     """
     pass
 
-@main.command(context_settings=CONTEXT_SETTINGS)
-@click.option("--directory", "-d", default=".")
-@click.option("--max_kpar", "-m", default=30,
-              help="Maximum value for KPAR, usually determined by the "
-                   "number of nodes at the user's disposal.")
-@click.option("--add_kpar", "-a", is_flag=True,
-              help="Add the KPAR tag to the INCAR file.")
-def kpar(directory, max_kpar, add_kpar):
-    """
-    Find a suitable value for KPAR.
-    """
-    from quotas.cli.commands.setup import kpar
-
-    kpar(directory=directory,
-         max_kpar=max_kpar,
-         add_kpar=add_kpar)
+@main.group()
 
 
-@main.command(context_settings=CONTEXT_SETTINGS)
-@click.option("--directory", "-d", default=".")
-def nkp(directory):
-    """
-    Quickly find the number of kpoints based on the input files in the current
-    directory.
-    """
-    from quotas.cli.commands.setup import nkp
-
-    nkp(directory=directory)
 
 
 @main.group(context_settings=CONTEXT_SETTINGS)
@@ -114,3 +89,40 @@ def dos(relax_dir, k_product):
 
     DOS_calc(relax_dir=relax_dir,
              k_product=k_product)
+
+@main.group(context_settings=CONTEXT_SETTINGS)
+def util():
+    """
+    A set of utility commands.
+    """
+    pass
+
+
+@util.command(context_settings=CONTEXT_SETTINGS)
+@click.option("--directory", "-d", default=".")
+@click.option("--max_kpar", "-m", default=30,
+              help="Maximum value for KPAR, usually determined by the "
+                   "number of nodes at the user's disposal.")
+@click.option("--add_kpar", "-a", is_flag=True,
+              help="Add the KPAR tag to the INCAR file.")
+def kpar(directory, max_kpar, add_kpar):
+    """
+    Find a suitable value for KPAR.
+    """
+    from quotas.cli.commands.setup import kpar
+
+    kpar(directory=directory,
+         max_kpar=max_kpar,
+         add_kpar=add_kpar)
+
+
+@util.command(context_settings=CONTEXT_SETTINGS)
+@click.option("--directory", "-d", default=".")
+def nkp(directory):
+    """
+    Quickly find the number of kpoints based on the input files in the current
+    directory.
+    """
+    from quotas.cli.commands.setup import nkp
+
+    nkp(directory=directory)
