@@ -47,27 +47,46 @@ def setup(bulk_file, miller_indices, vacuum, thickness, verbose):
 
 
 @slab.command(context_settings=CONTEXT_SETTINGS)
-def relax():
+@click.argument("slab_file", nargs=1)
+@click.option("--fix_part", "-f", default="center",
+              help="Part of the slab to fix in the geometry optimization.")
+@click.option("--fix_thickness", "-b", default=8,
+              help="Number of layers fixed as bulk in the geometry "
+                   "optimization.")
+@click.option("--verbose", "-v", is_flag=True)
+def relax(slab_file, fix_part, fix_thickness, verbose):
     """
     Set up the geometry optimization.
     """
-    pass
+    from quotas.cli.commands.slab import relax
+
+    relax(slab_file, fix_part, fix_thickness, verbose)
 
 
 @slab.command(context_settings=CONTEXT_SETTINGS)
-def wf():
+@click.argument("relax_dir", nargs=1)
+@click.option("--k_product", "-k", default=50)
+def wf(relax_dir, k_product):
     """
     Set up the work function calculation.
     """
-    pass
+    from quotas.cli.commands.slab import work_function_calc
+
+    work_function_calc(relax_dir=relax_dir,
+                       k_product=k_product)
 
 
 @slab.command(context_settings=CONTEXT_SETTINGS)
-def dos():
+@click.argument("relax_dir", nargs=1)
+@click.option("--k_product", "-k", default=80)
+def dos(relax_dir, k_product):
     """
     Set up the Density of states calculation.
     """
-    pass
+    from quotas.cli.commands.slab import DOS_calc
+
+    DOS_calc(relax_dir=relax_dir,
+             k_product=k_product)
 
 
 @main.group(context_settings=CONTEXT_SETTINGS)
@@ -125,34 +144,6 @@ def dos():
 #                fix_thickness=fix_thickness,
 #                verbose=verbose)
 #
-# @setup.command(context_settings=CONTEXT_SETTINGS)
-# @click.argument("relax_dir", nargs=1)
-# @click.option("--k_product", "-k", default=50)
-# def wf(relax_dir, k_product):
-#     """
-#     Set up the work function calculation, based on the output of the geometry
-#     optimization.
-#
-#     """
-#     from quotas.cli.commands.slab import work_function_calc
-#
-#     work_function_calc(relax_dir=relax_dir,
-#                        k_product=k_product)
-#
-#
-# @setup.command(context_settings=CONTEXT_SETTINGS)
-# @click.argument("relax_dir", nargs=1)
-# @click.option("--k_product", "-k", default=80)
-# def dos(relax_dir, k_product):
-#     """
-#     Set up the DOS calculation, based on the output of the geometry
-#     optimization.
-#
-#     """
-#     from quotas.cli.commands.slab import DOS_calc
-#
-#     DOS_calc(relax_dir=relax_dir,
-#              k_product=k_product)
 
 @main.group(context_settings=CONTEXT_SETTINGS)
 def util():
