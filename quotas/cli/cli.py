@@ -113,6 +113,14 @@ def dos():
     pass
 
 
+@bulk.command(context_settings=CONTEXT_SETTINGS)
+def diel():
+    """
+    Set up a dielectric function calculation.
+    """
+    pass
+
+
 @main.group(context_settings=CONTEXT_SETTINGS)
 def util():
     """

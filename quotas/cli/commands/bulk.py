@@ -1,13 +1,19 @@
 import os
 
-from monty.serialization import loadfn
+from pymatgen.core import Structure
 
 """
 Module that defines the commands for setting up bulk calculations.
 """
 
-def relax():
-    pass
+def relax(bulk_file):
+
+    bulk_structure = Structure.from_file(bulk_file)
+
+
 
 def dos():
+    pass
+
+def diel():
     pass

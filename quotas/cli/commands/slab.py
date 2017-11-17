@@ -1,14 +1,13 @@
+# Encoding: UTF-8
 
 import os
 import string
 
-from quotas.calculation import slabRelaxSet, slabWorkFunctionSet,\
-    find_suitable_kpar, find_irr_kpoints
+from quotas.calculation import slabRelaxSet, slabWorkFunctionSet
 from quotas.core import find_atomic_layers
 
 from pymatgen.core.structure import Structure
 from pymatgen.core.surface import SlabGenerator
-from pymatgen.io.vasp.inputs import Kpoints, Incar
 
 """
 Setup scripts for the calculations of the quotas package.
@@ -18,7 +17,8 @@ Setup scripts for the calculations of the quotas package.
 # Parameters
 MAX_KPAR = 30
 DFT_FUNCTIONAL = "PBE_54"
-#TODO Find way to make potential setting more user friendly
+# TODO Find way to make potential setting more user friendly
+
 
 def setup(bulk_file, miller_indices, thickness, vacuum, verbose):
 
@@ -37,7 +37,7 @@ def setup(bulk_file, miller_indices, thickness, vacuum, verbose):
 
     # If no magnetic configuration is given, start the calculation in a
     # non-magnetic state.
-    if not "magmom" in bulk_structure.site_properties.keys():
+    if "magmom" not in bulk_structure.site_properties.keys():
 
         if verbose:
             print("No magnetic configuration found. Adding magmom = 0 for all "
@@ -74,14 +74,13 @@ def setup(bulk_file, miller_indices, thickness, vacuum, verbose):
         slab.sort(key=lambda site: site.properties["magmom"])
         slab.sort()
 
-
         slab_letter = string.ascii_lowercase[slab_letter_counter]
         slab_letter_counter += 1
 
         slab_file = bulk_structure.composition.reduced_formula + "_" \
-                    + "".join([str(number) for number in miller_indices]) \
-                    + "_" + slab_letter + "_" + str(n_atomic_layers) + "l" \
-                    + str(int(vacuum)) + "v"
+            + "".join([str(number) for number in miller_indices]) \
+            + "_" + slab_letter + "_" + str(n_atomic_layers) + "l" \
+            + str(int(vacuum)) + "v"
 
         # Add an extra tag to the name in case the slab is polar
         if slab.is_polar():
@@ -95,7 +94,8 @@ def setup(bulk_file, miller_indices, thickness, vacuum, verbose):
 
         # #TODO And allow a slab to be constructed from a .json!
 
-        slab_structure = Structure(slab.lattice, slab.species, slab.frac_coords,
+        slab_structure = Structure(slab.lattice, slab.species,
+                                   slab.frac_coords,
                                    site_properties=slab.site_properties)
         slab_structure.to(fmt="json", filename=slab_file+".json")
 
@@ -117,10 +117,10 @@ def relax(slab_file, fix_part, fix_thickness, verbose):
 
     current_dir = os.path.dirname(".")
 
-    # #TODO Naming is difficult because of the lack of a jsonable Slab class. Fix this after fixing that problem.
+    # TODO Naming is difficult because of the lack of a jsonable Slab class. Fix this after fixing that problem.
 
     relax_dir = os.path.join(
-        current_dir,slab_file.strip(
+        current_dir, slab_file.strip(
             slab_structure.composition.reduced_formula + "_"
         ).strip(".json"))
 
@@ -158,11 +158,10 @@ def dos(relax_dir, k_product):
     relax_dir = os.path.abspath(relax_dir)
 
     # Set up the calculation
-    DOS_calc = slabWorkFunctionSet.from_relax_calc(relax_dir=relax_dir,
+    dos_calc = slabWorkFunctionSet.from_relax_calc(relax_dir=relax_dir,
                                                    k_product=k_product)
 
     calculation_dir = os.path.join(os.path.split(relax_dir)[0], "dos")
 
     # Write the input files of the calculation
-    DOS_calc.write_input(calculation_dir)
-
+    dos_calc.write_input(calculation_dir)

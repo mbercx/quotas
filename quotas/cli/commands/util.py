@@ -1,3 +1,5 @@
+# Encoding: UTF-8
+
 import os
 
 from quotas.core import find_irr_kpoints, find_suitable_kpar
@@ -8,6 +10,7 @@ from pymatgen.io.vasp.inputs import Incar, Kpoints
 """
 Utility commands. Basically something that I can't find a place for elsewhere.
 """
+
 
 def kpar(directory, max_kpar, add_kpar):
     """
