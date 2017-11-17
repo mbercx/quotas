@@ -20,13 +20,88 @@ MAX_KPAR = 30
 DFT_FUNCTIONAL = "PBE_54"
 #TODO Find way to make potential setting more user friendly
 
-def slab_setup(filename, miller_indices, thickness, vacuum, fix_part,
+def setup(bulk_file, miller_indices, thickness, vacuum, verbose):
+
+    if verbose:
+        print("Importing bulk structure...")
+
+    # Import the bulk structure
+    bulk_structure = Structure.from_file(bulk_file)
+
+    # If no magnetic configuration is given, start the calculation in a
+    # non-magnetic state.
+    if not "magmom" in bulk_structure.site_properties.keys():
+
+        if verbose:
+            print("No magnetic configuration found. Adding magmom = 0 for all "
+                  "sites.")
+
+        bulk_structure.add_site_property("magmom",
+                                         [0]*len(bulk_structure.sites))
+
+    #TODO write checks for oxidation states etc
+
+    if verbose:
+        print("Generating slab terminations...")
+
+    # Generate the various terminations of the surface
+    slabs = SlabGenerator(bulk_structure, miller_indices,
+                          thickness, vacuum).get_slabs()
+
+    if verbose:
+        print("Number of slabs found = " + str(len(slabs)))
+
+    # Write the structure files (.json format for site properties)
+
+    if verbose:
+        print("Writing structure files...")
+
+    # Keep track of letters for terminations
+    slab_letter_counter = 0
+
+    for slab in slabs:
+
+        n_atomic_layers = len(find_atomic_layers(slab))
+
+        if verbose:
+            print("Number of layers in slab: " + str(n_atomic_layers))
+
+        slab.sort(key=lambda site: site.properties["magmom"])
+        slab.sort()
+
+
+        slab_letter = string.ascii_lowercase[slab_letter_counter]
+        slab_letter_counter += 1
+
+        slab_file = bulk_file.split(".")[0].join(
+                    [str(number) for number in miller_indices]
+                    ) \
+                  + "_" + slab_letter + "_" + str(n_atomic_layers) + "l" \
+                  + str(int(vacuum)) + "v"
+
+        # Add an extra tag to the name in case the slab is polar
+        if slab.is_polar():
+            slab_file += "_polar"
+
+        slab.to("json", slab_file)
+
+def relax(slab_file, fix_part, fix_thickness, verbose):
+    pass
+
+def wf():
+    pass
+
+def dos():
+    pass
+
+
+def slab_setup(bulk_file, miller_indices, thickness, vacuum, fix_part,
                fix_thickness, verbose):
     """
     Set up all the calculations to study the slab of a structure.
 
     Args:
-        filename (string): Name of the structure file.
+        bulk_file (string): Name of the structure file.
         miller_indices (list): The miller indices of the surface.
         thickness (float):
         vacuum (float):
@@ -40,7 +115,7 @@ def slab_setup(filename, miller_indices, thickness, vacuum, fix_part,
         print("Importing bulk structure...")
 
     # Import the bulk structure
-    bulk_structure = Structure.from_file(filename)
+    bulk_structure = Structure.from_file(bulk_file)
 
     # If no magnetic configuration is given, start the calculation in a
     # non-magnetic state.

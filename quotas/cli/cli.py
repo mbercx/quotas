@@ -100,12 +100,12 @@ def slab(miller_indices, filename, vacuum, thickness, fix_part, fix_thickness,
     """
     Set up all the calculations for a specific surface of a structure.
     """
-    from quotas.cli.commands.setup import slab_setup
+    from quotas.cli.commands.slab import slab_setup
 
     #TODO Add checks for the miller_indices
     miller_indices = [int(number) for number in miller_indices]
 
-    slab_setup(filename=filename,
+    slab_setup(bulk_file=filename,
                miller_indices=miller_indices,
                thickness=thickness,
                vacuum=vacuum,
@@ -122,7 +122,7 @@ def wf(relax_dir, k_product):
     optimization.
 
     """
-    from quotas.cli.commands.setup import work_function_calc
+    from quotas.cli.commands.slab import work_function_calc
 
     work_function_calc(relax_dir=relax_dir,
                        k_product=k_product)
@@ -137,7 +137,7 @@ def dos(relax_dir, k_product):
     optimization.
 
     """
-    from quotas.cli.commands.setup import DOS_calc
+    from quotas.cli.commands.slab import DOS_calc
 
     DOS_calc(relax_dir=relax_dir,
              k_product=k_product)
@@ -161,7 +161,7 @@ def kpar(directory, max_kpar, add_kpar):
     """
     Find a suitable value for KPAR.
     """
-    from quotas.cli.commands.setup import kpar
+    from quotas.cli.commands.slab import kpar
 
     kpar(directory=directory,
          max_kpar=max_kpar,
@@ -175,6 +175,6 @@ def nkp(directory):
     Quickly find the number of kpoints based on the input files in the current
     directory.
     """
-    from quotas.cli.commands.setup import nkp
+    from quotas.cli.commands.slab import nkp
 
     nkp(directory=directory)

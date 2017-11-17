@@ -10,7 +10,7 @@ from pymatgen.io.vasp.sets import DictSet
 from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar
 
 """
-Package that defines the various calculations required for the quotas script.
+Module that defines the various calculations required for the quotas script.
 
 """
 
