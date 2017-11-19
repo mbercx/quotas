@@ -164,11 +164,14 @@ def dos(relax_dir, k_product, hse_calc=False):
     nbands = relax_out.parameters["NBANDS"]*3
 
     # Add some typical extra settings for the DOS calculation
-    dos_incar = {"NEDOS": 2000, "ICHARG":11, "NBANDS":nbands}
+    dos_incar = {"NEDOS": 2000, "NBANDS":nbands}
 
     if hse_calc:
         print("Sorry, not implemented yet.")
     else:
+
+        # Use the charge density from the geometry optimization
+        dos_incar["ICHARG"] = 11
 
         # Set up the calculation
         dos_calc = slabWorkFunctionSet.from_relax_calc(
@@ -183,6 +186,10 @@ def dos(relax_dir, k_product, hse_calc=False):
     # Write the input files of the calculation
     dos_calc.write_input(calculation_dir)
 
-    # Copy the charge density from the geometry optimization
-    shutil.copy(os.path.join(relax_dir, "CHGCAR"),
-                os.path.join(calculation_dir))
+    if not hse_calc:
+
+        # Copy the charge density from the geometry optimization
+        shutil.copy(os.path.join(relax_dir, "CHGCAR"),
+                    os.path.join(calculation_dir))
+
+
