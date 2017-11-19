@@ -127,7 +127,7 @@ def relax(slab_file, fix_part, fix_thickness, verbose):
     relax_dir = os.path.join(
         current_dir, slab_file.strip(
             slab_structure.composition.reduced_formula + "_"
-        ).strip(".json"))
+        ).strip(".json") + fix_part + "_" + "relax")
 
     # Write the input files to the calculation directory
     geo_optimization.write_input(relax_dir)
