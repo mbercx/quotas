@@ -185,7 +185,7 @@ class slabWorkFunctionSet(DictSet):
         return kpoints
 
     @staticmethod
-    def from_relax_calc(relax_dir, k_product):
+    def from_relax_calc(relax_dir, k_product, **kwargs):
         """
         Set up the calculation based on the output of the geometry
         optimization.
@@ -209,14 +209,15 @@ class slabWorkFunctionSet(DictSet):
 
         return slabWorkFunctionSet(structure=structure,
                                    k_product=k_product,
-                                   potcar_functional=DFT_FUNCTIONAL)
+                                   potcar_functional=DFT_FUNCTIONAL,
+                                   **kwargs)
 
 class slabWorkFunctionHSESet(DictSet):
     """
     A VASP input set that can be used to calculate the work function of a slab.
     """
 
-    CONFIG = _load_yaml_config("slabWorkFunctionSet")
+    CONFIG = _load_yaml_config("slabWorkFunctionHSESet")
 
     def __init__(self, structure, k_product=50, **kwargs):
         super(slabWorkFunctionHSESet,

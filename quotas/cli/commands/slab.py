@@ -1,6 +1,7 @@
 # Encoding: UTF-8
 
 import os
+import shutil
 import string
 
 from quotas.calculation import slabRelaxSet, slabWorkFunctionSet
@@ -8,6 +9,7 @@ from quotas.core import find_atomic_layers
 
 from pymatgen.core.structure import Structure
 from pymatgen.core.surface import SlabGenerator
+from pymatgen.io.vasp.outputs import Vasprun
 
 """
 Setup scripts for the calculations of the quotas package.
@@ -157,11 +159,23 @@ def dos(relax_dir, k_product):
     """
     relax_dir = os.path.abspath(relax_dir)
 
+    relax_out = Vasprun(os.path.join(relax_dir, "vasprun.xml"))
+
+    nbands = relax_out.parameters["NBANDS"]*3
+
+    # Add some typical extra settings for the DOS calculation
+    dos_incar = {"NEDOS": 2000, "ICHARG":11, "NBANDS":nbands}
+
     # Set up the calculation
     dos_calc = slabWorkFunctionSet.from_relax_calc(relax_dir=relax_dir,
+                                                   incar_settings=dos_incar,
                                                    k_product=k_product)
 
     calculation_dir = os.path.join(os.path.split(relax_dir)[0], "dos")
 
     # Write the input files of the calculation
     dos_calc.write_input(calculation_dir)
+
+    # Copy the charge density from the geometry optimization
+    shutil.copy(os.path.join(relax_dir, "CHGCAR"),
+                os.path.join(calculation_dir))
