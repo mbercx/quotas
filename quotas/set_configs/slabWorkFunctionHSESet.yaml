@@ -1,4 +1,4 @@
-# PBE+U calculations used for the work function calculation of a slab.
+# HSE06 calculations used for the work function/dos calculation of a slab.
 INCAR:
   AEXX: 0.25
   ALGO: All

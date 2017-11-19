@@ -1,4 +1,4 @@
-# PBE+U calculations used for the work function calculation of a slab.
+# PBE+U calculations used for the work function/dos calculation of a slab.
 INCAR:
   ALGO: Fast
   AMIN: 0.01
