@@ -22,7 +22,7 @@ DFT_FUNCTIONAL = "PBE_54"
 # TODO Find way to make potential setting more user friendly
 
 
-def setup(bulk_file, miller_indices, thickness, vacuum, verbose):
+def setup(bulk_file, miller_indices, thickness, vacuum, verbose, write_cif):
 
     if verbose:
         print("Importing bulk structure...")
@@ -100,6 +100,9 @@ def setup(bulk_file, miller_indices, thickness, vacuum, verbose):
                                    slab.frac_coords,
                                    site_properties=slab.site_properties)
         slab_structure.to(fmt="json", filename=slab_file+".json")
+
+        if write_cif:
+            slab_structure.to(fmt="cif", filename=slab_file + ".cif")
 
 
 def relax(slab_file, fix_part, fix_thickness, verbose):
