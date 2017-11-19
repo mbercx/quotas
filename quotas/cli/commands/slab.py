@@ -151,7 +151,7 @@ def wf(relax_dir, k_product, hse):
     work_function_calc.write_input(calculation_dir)
 
 
-def dos(relax_dir, k_product):
+def dos(relax_dir, k_product, hse_calc=False):
     """
     Set up the work function calculation based on the output of the geometry
     optimization.
@@ -166,12 +166,19 @@ def dos(relax_dir, k_product):
     # Add some typical extra settings for the DOS calculation
     dos_incar = {"NEDOS": 2000, "ICHARG":11, "NBANDS":nbands}
 
-    # Set up the calculation
-    dos_calc = slabWorkFunctionSet.from_relax_calc(relax_dir=relax_dir,
-                                                   incar_settings=dos_incar,
-                                                   k_product=k_product)
+    if hse_calc:
+        print("Sorry, not implemented yet.")
+    else:
 
-    calculation_dir = os.path.join(os.path.split(relax_dir)[0], "dos")
+        # Set up the calculation
+        dos_calc = slabWorkFunctionSet.from_relax_calc(
+            relax_dir=relax_dir,
+            incar_settings=dos_incar,
+            k_product=k_product
+        )
+
+        # Set up the calculation directory
+        calculation_dir = os.path.join(os.path.split(relax_dir)[0], "DFTU_dos")
 
     # Write the input files of the calculation
     dos_calc.write_input(calculation_dir)
