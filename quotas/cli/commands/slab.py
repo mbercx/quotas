@@ -174,7 +174,7 @@ def dos(relax_dir, k_product, hse_calc=False):
         dos_calc = slabWorkFunctionSet.from_relax_calc(
             relax_dir=relax_dir,
             k_product=k_product,
-            incar_settings=dos_incar
+            user_incar_settings=dos_incar
         )
 
         # Set up the calculation directory
