@@ -34,7 +34,7 @@ def slab():
 @click.option("--thickness", "-t", default=20,
               help="Minimum thickness of the slab, in Angstroms.")
 @click.option("--verbose", "-v", is_flag=True)
-@click.option("--write_cif", "c", is_flag=True)
+@click.option("--write_cif", "-c", is_flag=True)
 def setup(bulk_file, miller_indices, vacuum, thickness, verbose, write_cif):
     """
     Set up slabs from the bulk geometry.
