@@ -115,20 +115,39 @@ def relax(bulk_file, verbose):
 @bulk.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("relax_dir", nargs=1)
 @click.option("--k_product", "-k", default=80)
-def dos(relax_dir, k_product):
+@click.option("--hse", "-H", is_flag=True)
+def dos(relax_dir, k_product, hse):
     """
     Set up the Density of states calculation.
     """
     from quotas.cli.commands.bulk import dos
 
     dos(relax_dir=relax_dir,
-        k_product=k_product)
+        k_product=k_product,
+        hse_calc=hse)
 
 
 @bulk.command(context_settings=CONTEXT_SETTINGS)
 def diel():
     """
     Set up a dielectric function calculation.
+    """
+    pass
+
+
+@main.group(context_settings=CONTEXT_SETTINGS)
+def analyze():
+    """
+    Analysis commands.
+    """
+    pass
+
+
+@analyze.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("directory", nargs=1)
+def wf(directory):
+    """
+    Calculate the work function from the local potential.
     """
     pass
 

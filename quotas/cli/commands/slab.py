@@ -148,7 +148,8 @@ def wf(relax_dir, k_product, hse_calc=False):
     work_function_calc = \
         slabWorkFunctionSet.from_relax_calc(relax_dir, k_product=k_product)
 
-    calculation_dir = os.path.join(os.path.split(relax_dir)[0], "work_function")
+    calculation_dir = os.path.join(os.path.split(relax_dir)[0],
+                                   "work_function")
 
     # Write the input files of the calculation
     work_function_calc.write_input(calculation_dir)
