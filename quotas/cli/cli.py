@@ -149,7 +149,9 @@ def wf(directory):
     """
     Calculate the work function from the local potential.
     """
-    pass
+    from quotas.cli.commands.analyze import wf
+
+    wf(directory=directory)
 
 
 @main.group(context_settings=CONTEXT_SETTINGS)
