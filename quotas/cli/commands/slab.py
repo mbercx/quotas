@@ -136,7 +136,7 @@ def relax(slab_file, fix_part, fix_thickness, verbose):
         print("Written input files to " + relax_dir)
 
 
-def wf(relax_dir, k_product, hse):
+def wf(relax_dir, k_product, hse_calc=False):
     """
     Set up the work function calculation based on the output of the geometry
     optimization.

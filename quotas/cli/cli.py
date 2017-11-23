@@ -18,6 +18,7 @@ def main():
     """
     pass
 
+
 @main.group()
 def slab():
     """
@@ -74,7 +75,7 @@ def wf(relax_dir, k_product):
     from quotas.cli.commands.slab import wf
 
     wf(relax_dir=relax_dir,
-                       k_product=k_product)
+       k_product=k_product)
 
 
 @slab.command(context_settings=CONTEXT_SETTINGS)
