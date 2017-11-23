@@ -113,11 +113,16 @@ def relax(bulk_file, verbose):
 
 
 @bulk.command(context_settings=CONTEXT_SETTINGS)
-def dos():
+@click.argument("relax_dir", nargs=1)
+@click.option("--k_product", "-k", default=80)
+def dos(relax_dir, k_product):
     """
     Set up the Density of states calculation.
     """
-    pass
+    from quotas.cli.commands.bulk import dos
+
+    dos(relax_dir=relax_dir,
+        k_product=k_product)
 
 
 @bulk.command(context_settings=CONTEXT_SETTINGS)
