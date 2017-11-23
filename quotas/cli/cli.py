@@ -81,14 +81,16 @@ def wf(relax_dir, k_product):
 @slab.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("relax_dir", nargs=1)
 @click.option("--k_product", "-k", default=80)
-def dos(relax_dir, k_product):
+@click.option("--hse", "-H", is_flag=True)
+def dos(relax_dir, k_product, hse):
     """
     Set up the Density of states calculation.
     """
     from quotas.cli.commands.slab import dos
 
     dos(relax_dir=relax_dir,
-             k_product=k_product)
+        k_product=k_product,
+        hse_calc=hse)
 
 
 @main.group(context_settings=CONTEXT_SETTINGS)
