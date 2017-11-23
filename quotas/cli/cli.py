@@ -100,11 +100,16 @@ def bulk():
 
 
 @bulk.command(context_settings=CONTEXT_SETTINGS)
-def relax():
+@click.argument("bulk_file", nargs=1)
+@click.option("--verbose", "-v", is_flag=True)
+def relax(bulk_file, verbose):
     """
     Set up the geometry optimization.
     """
-    pass
+    from quotas.cli.commands.bulk import relax
+
+    relax(bulk_file=bulk_file,
+          verbose=verbose)
 
 
 @bulk.command(context_settings=CONTEXT_SETTINGS)
