@@ -24,4 +24,5 @@ def wf(directory, plot_potential=False):
         plt.plot(average_potential)
         pass #TODO Finish this part
 
-    return max(average_potential) - fermi_energy
+    work_function = max(average_potential) - fermi_energy
+    print("Work functino = " + work_function)
