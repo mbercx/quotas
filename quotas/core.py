@@ -1,6 +1,7 @@
 # Encoding: UTF-8
 
 from pymatgen.core.surface import SlabGenerator
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import string
 
 
