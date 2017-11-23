@@ -4,7 +4,8 @@ import os
 import shutil
 import string
 
-from quotas.calculation import slabRelaxSet, slabWorkFunctionSet
+from quotas.calculation import slabRelaxSet, slabWorkFunctionSet, \
+    slabWorkFunctionHSESet
 from quotas.core import find_atomic_layers
 
 from pymatgen.core.structure import Structure
@@ -171,7 +172,17 @@ def dos(relax_dir, k_product, hse_calc=False):
     dos_incar = {"NEDOS": 2000, "NBANDS":nbands}
 
     if hse_calc:
-        print("Sorry, not implemented yet.")
+
+        # Set up the calculation
+        dos_calc = slabWorkFunctionHSESet.from_relax_calc(
+            relax_dir=relax_dir,
+            k_product=k_product,
+            user_incar_settings=dos_incar
+        )
+
+        # Set up the calculation directory
+        calculation_dir = os.path.join(os.path.split(relax_dir)[0], "hse_dos")
+
     else:
 
         # Use the charge density from the geometry optimization
@@ -185,7 +196,7 @@ def dos(relax_dir, k_product, hse_calc=False):
         )
 
         # Set up the calculation directory
-        calculation_dir = os.path.join(os.path.split(relax_dir)[0], "DFTU_dos")
+        calculation_dir = os.path.join(os.path.split(relax_dir)[0], "dftu_dos")
 
     # Write the input files of the calculation
     dos_calc.write_input(calculation_dir)
@@ -195,5 +206,3 @@ def dos(relax_dir, k_product, hse_calc=False):
         # Copy the charge density from the geometry optimization
         shutil.copy(os.path.join(relax_dir, "CHGCAR"),
                     os.path.join(calculation_dir))
-
-

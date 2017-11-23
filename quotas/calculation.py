@@ -255,7 +255,7 @@ class slabWorkFunctionHSESet(DictSet):
         return kpoints
 
     @staticmethod
-    def from_relax_calc(relax_dir, k_product):
+    def from_relax_calc(relax_dir, k_product, **kwargs):
         """
         Set up the calculation based on the output of the geometry
         optimization.
@@ -263,7 +263,7 @@ class slabWorkFunctionHSESet(DictSet):
         """
         relax_dir = os.path.abspath(relax_dir)
 
-        #TODO this can be made more general
+        # TODO this can be made more general
         # Obtain the structure from the CONTCAR file of the VASP calculation
         try:
             structure = Structure.from_file(os.path.join(relax_dir, "CONTCAR"))
@@ -279,5 +279,6 @@ class slabWorkFunctionHSESet(DictSet):
 
         return slabWorkFunctionSet(structure=structure,
                                    k_product=k_product,
-                                   potcar_functional=DFT_FUNCTIONAL)
+                                   potcar_functional=DFT_FUNCTIONAL,
+                                   **kwargs)
 

@@ -26,3 +26,4 @@ def wf(directory, plot_potential=False):
 
     work_function = max(average_potential) - fermi_energy
     print("Work function = " + str(work_function))
+
