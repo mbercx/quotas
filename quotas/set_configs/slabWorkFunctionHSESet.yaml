@@ -16,7 +16,7 @@ INCAR:
   LREAL: AUTO
   LVTOT: true
   LVHAR: true
-  LWAVE: false
+  LWAVE: true
   MAGMOM: 0
   NELM: 100
   NELMIN: 8

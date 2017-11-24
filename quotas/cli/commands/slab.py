@@ -166,6 +166,7 @@ def dos(relax_dir, k_product, hse_calc=False):
 
     relax_out = Vasprun(os.path.join(relax_dir, "vasprun.xml"))
 
+    # Triple the amount of bands compared to the minimum
     nbands = relax_out.parameters["NBANDS"]*3
 
     # Add some typical extra settings for the DOS calculation

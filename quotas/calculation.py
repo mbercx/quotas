@@ -277,8 +277,8 @@ class slabWorkFunctionHSESet(DictSet):
         magmom = incar["MAGMOM"]
         structure.add_site_property("magmom", magmom)
 
-        return slabWorkFunctionSet(structure=structure,
-                                   k_product=k_product,
-                                   potcar_functional=DFT_FUNCTIONAL,
-                                   **kwargs)
+        return slabWorkFunctionHSESet(structure=structure,
+                                      k_product=k_product,
+                                      potcar_functional=DFT_FUNCTIONAL,
+                                      **kwargs)
 
