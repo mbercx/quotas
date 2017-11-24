@@ -28,7 +28,7 @@ class bulkRelaxSet(DictSet):
     VASP input set for the bulk relaxation.
 
     """
-    CONFIG = CONFIG = _load_yaml_config("bulkRelaxSet")
+    CONFIG = _load_yaml_config("bulkRelaxSet")
 
     def __init__(self, structure, **kwargs):
         super(bulkRelaxSet, self).__init__(
@@ -38,7 +38,7 @@ class bulkRelaxSet(DictSet):
 
 class bulkDosSet(DictSet):
 
-    CONFIG = CONFIG = _load_yaml_config("bulkDosSet")
+    CONFIG = _load_yaml_config("bulkDosSet")
 
     def __init__(self, structure, **kwargs):
         super(bulkDosSet, self).__init__(
@@ -48,7 +48,7 @@ class bulkDosSet(DictSet):
 
 class bulkHSEDosSet(DictSet):
 
-    CONFIG = CONFIG = _load_yaml_config("bulkHSEDosSet")
+    CONFIG = _load_yaml_config("bulkHSEDosSet")
 
     def __init__(self, structure, **kwargs):
         super(bulkHSEDosSet, self).__init__(
@@ -222,7 +222,7 @@ class slabWorkFunctionHSESet(DictSet):
     def __init__(self, structure, k_product=50, **kwargs):
         super(slabWorkFunctionHSESet,
               self).__init__(structure=structure,
-                             config_dict=slabWorkFunctionSet.CONFIG,
+                             config_dict=slabWorkFunctionHSESet.CONFIG,
                              **kwargs)
         self.k_product = k_product
         self.kwargs = kwargs
