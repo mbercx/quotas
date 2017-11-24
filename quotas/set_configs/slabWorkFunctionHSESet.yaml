@@ -5,7 +5,7 @@ INCAR:
   AMIN: 0.01
   AMIX: 0.2
   BMIX: 0.001
-  EDIFF: 1.0e-05
+  EDIFF: 1.0e-04
   ENCUT: 500
   ISMEAR: 0
   ISPIN: 2
