@@ -18,11 +18,24 @@ def relax(bulk_file, verbose):
     if verbose:
         print("Reading structure from file...")
 
+    # Read the bulk structure
     bulk_structure = Structure.from_file(bulk_file)
+
+    # If no magnetic configuration is given, start the calculation in a
+    # non-magnetic state.
+    if "magmom" not in bulk_structure.site_properties.keys():
+
+        if verbose:
+            print("No magnetic configuration found. Adding magmom = 0 for all "
+                  "sites.")
+
+        bulk_structure.add_site_property("magmom",
+                                         [0] * len(bulk_structure.sites))
 
     if verbose:
         print("Setting up calculation...")
 
+    # Set up the geometry optimization
     geo_optimization = bulkRelaxSet(structure=bulk_structure,
                                     potcar_functional=DFT_FUNCTIONAL)
 
@@ -30,6 +43,7 @@ def relax(bulk_file, verbose):
 
     relax_dir = os.path.join(current_dir, "bulk", "relax")
 
+    # Write the input files to the geo optimization directory
     geo_optimization.write_input(relax_dir)
 
     if verbose:
