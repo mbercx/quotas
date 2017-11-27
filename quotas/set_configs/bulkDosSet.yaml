@@ -112,8 +112,6 @@ INCAR:
   LDAUPRINT: 1
   LORBIT: 11
   LREAL: AUTO
-  LVTOT: true
-  LVHAR: true
   LWAVE: false
   MAGMOM: 0
   NEDOS: 2000
