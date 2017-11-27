@@ -70,8 +70,12 @@ def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
                           "one layer to the fixed part of the slab.")
                     thickness += 1
 
-            # Calculate the number of layers to optimiz on each site
+            # Calculate the number of layers to optimize on each site
             n_optimize_layers = int((len(atomic_layers) - thickness)/2)
+
+            if n_optimize_layers < 5:
+                print("WARNING: Less than 5 layers are optimized on each "
+                      "side of the slab.")
 
             # Take the fixed layers from the atomic layers of the slab
             fixed_layers = atomic_layers[n_optimize_layers: n_optimize_layers +
