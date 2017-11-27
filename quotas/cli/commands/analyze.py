@@ -25,5 +25,15 @@ def wf(directory, plot_potential=False):
         pass #TODO Finish this part
 
     work_function = max(average_potential) - fermi_energy
-    print("Work function = " + str(work_function))
+    print("Work function = " + str(work_function) + " eV")
 
+
+def bandgap(directory):
+
+    # Load the vasprun.xml file
+    vasprun = Vasprun(os.path.join(directory, "vasprun.xml"))
+
+    # Extract the band gap from the band structure
+    band_gap = vasprun.get_band_structure().get_band_gap()
+
+    print("Band gap = " + str(band_gap) + " eV")
