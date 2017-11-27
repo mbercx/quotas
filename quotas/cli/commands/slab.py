@@ -106,7 +106,7 @@ def setup(bulk_file, miller_indices, thickness, vacuum, verbose, write_cif):
             slab_structure.to(fmt="cif", filename=slab_file + ".cif")
 
 
-def relax(slab_file, fix_part, fix_thickness, verbose):
+def relax(slab_file, fix_part, fix_thickness, is_metal, verbose):
 
     if verbose:
         print("Reading structure from file...")
@@ -116,10 +116,21 @@ def relax(slab_file, fix_part, fix_thickness, verbose):
     if verbose:
         print("Setting up calculation...")
 
-    geo_optimization = slabRelaxSet(slab_structure,
-                                    potcar_functional=DFT_FUNCTIONAL)
-    geo_optimization.fix_slab_bulk(thickness=fix_thickness,
-                                   part=fix_part)
+    if is_metal:
+
+        geo_optimization = slabRelaxSet(slab_structure,
+                                        user_incar_settings={"ISMEAR":1,
+                                                             "SIGMA":0.2},
+                                        potcar_functional=DFT_FUNCTIONAL)
+        geo_optimization.fix_slab_bulk(thickness=fix_thickness,
+                                       part=fix_part)
+
+    else:
+
+        geo_optimization = slabRelaxSet(slab_structure,
+                                        potcar_functional=DFT_FUNCTIONAL)
+        geo_optimization.fix_slab_bulk(thickness=fix_thickness,
+                                       part=fix_part)
 
     current_dir = os.path.dirname(".")
 

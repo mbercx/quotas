@@ -55,14 +55,15 @@ def setup(bulk_file, miller_indices, vacuum, thickness, verbose, write_cif):
 @click.option("--fix_thickness", "-b", default=8,
               help="Number of layers fixed as bulk in the geometry "
                    "optimization.")
+@click.option("--is_metal", "-m", is_flag=True)
 @click.option("--verbose", "-v", is_flag=True)
-def relax(slab_file, fix_part, fix_thickness, verbose):
+def relax(slab_file, fix_part, fix_thickness, is_metal, verbose):
     """
     Set up the geometry optimization.
     """
     from quotas.cli.commands.slab import relax
 
-    relax(slab_file, fix_part, fix_thickness, verbose)
+    relax(slab_file, fix_part, fix_thickness, is_metal, verbose)
 
 
 @slab.command(context_settings=CONTEXT_SETTINGS)
