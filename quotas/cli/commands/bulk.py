@@ -45,8 +45,6 @@ def relax(bulk_file, is_metal, verbose):
         geo_optimization = bulkRelaxSet(structure=bulk_structure,
                                         potcar_functional=DFT_FUNCTIONAL)
 
-    print("LDAU: " + geo_optimization.incar['LDAU'])
-
     current_dir = os.path.dirname(".")
 
     relax_dir = os.path.join(current_dir, "bulk", "relax")
