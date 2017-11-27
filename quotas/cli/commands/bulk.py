@@ -13,7 +13,7 @@ Module that defines the commands for setting up bulk calculations.
 DFT_FUNCTIONAL = "PBE_54"
 
 
-def relax(bulk_file, verbose):
+def relax(bulk_file, is_metal, verbose):
 
     if verbose:
         print("Reading structure from file...")
@@ -36,8 +36,14 @@ def relax(bulk_file, verbose):
         print("Setting up calculation...")
 
     # Set up the geometry optimization
-    geo_optimization = bulkRelaxSet(structure=bulk_structure,
-                                    potcar_functional=DFT_FUNCTIONAL)
+    if is_metal:
+        geo_optimization = bulkRelaxSet(structure=bulk_structure,
+                                        user_incar_settings={"ISMEAR":1,
+                                                             "SIGMA":0.2},
+                                        potcar_functional=DFT_FUNCTIONAL)
+    else:
+        geo_optimization = bulkRelaxSet(structure=bulk_structure,
+                                        potcar_functional=DFT_FUNCTIONAL)
 
     current_dir = os.path.dirname(".")
 
