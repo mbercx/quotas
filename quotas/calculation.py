@@ -18,6 +18,7 @@ MODULE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                           "set_configs")
 DFT_FUNCTIONAL = "PBE_54"
 
+
 def _load_yaml_config(filename):
     config = loadfn(os.path.join(MODULE_DIR, "%s.yaml" % filename))
     return config
@@ -102,13 +103,13 @@ class bulkDosSet(DictSet):
                                    **kwargs)
 
 
-class bulkHSEDosSet(DictSet):
+class bulkDosHSESet(DictSet):
 
     CONFIG = _load_yaml_config("bulkHSEDosSet")
 
     def __init__(self, structure, k_product, **kwargs):
-        super(bulkHSEDosSet, self).__init__(
-            structure, bulkHSEDosSet.CONFIG, **kwargs)
+        super(bulkDosHSESet, self).__init__(
+            structure, bulkDosHSESet.CONFIG, **kwargs)
         self.k_product = k_product
         self.kwargs = kwargs
 
@@ -162,7 +163,7 @@ class bulkHSEDosSet(DictSet):
         magmom = incar["MAGMOM"]
         structure.add_site_property("magmom", magmom)
 
-        return bulkHSEDosSet(structure=structure,
+        return bulkDosHSESet(structure=structure,
                              k_product=k_product,
                              potcar_functional=DFT_FUNCTIONAL,
                              **kwargs)

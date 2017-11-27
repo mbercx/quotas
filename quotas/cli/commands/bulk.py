@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from quotas.calculation import bulkRelaxSet, bulkDosSet
+from quotas.calculation import bulkRelaxSet, bulkDosSet, bulkDosHSESet
 
 from pymatgen.core import Structure
 from pymatgen.io.vasp.outputs import Vasprun
@@ -66,7 +66,17 @@ def dos(relax_dir, k_product, hse_calc=False):
     dos_incar = {"NEDOS": 2000, "NBANDS":nbands}
 
     if hse_calc:
-        print("Sorry, not implemented yet.")
+
+        # Set up the calculation
+        dos_calc = bulkDosHSESet.from_relax_calc(
+            relax_dir=relax_dir,
+            k_product=k_product,
+            user_incar_settings=dos_incar
+        )
+
+        # Set up the calculation directory
+        calculation_dir = os.path.join(os.path.split(relax_dir)[0], "hse_dos")
+
     else:
 
         # Use the charge density from the geometry optimization
@@ -80,7 +90,7 @@ def dos(relax_dir, k_product, hse_calc=False):
         )
 
         # Set up the calculation directory
-        calculation_dir = os.path.join(os.path.split(relax_dir)[0], "DFTU_dos")
+        calculation_dir = os.path.join(os.path.split(relax_dir)[0], "dftu_dos")
 
     # Write the input files of the calculation
     dos_calc.write_input(calculation_dir)
