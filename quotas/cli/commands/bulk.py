@@ -1,5 +1,4 @@
 import os
-import shutil
 import subprocess
 
 from quotas.calculation import bulkRelaxSet, bulkDosSet, bulkDosHSESet
@@ -99,8 +98,6 @@ def dos(relax_dir, k_product, hse_calc=False):
     if not hse_calc:
 
         # Copy the charge density from the geometry optimization
-        # shutil.copy(os.path.join(relax_dir, "CHGCAR"),
-        #             os.path.join(calculation_dir))
         subprocess.call(["cp", os.path.join(relax_dir, "CHGCAR"),
                          os.path.join(calculation_dir)])
 
