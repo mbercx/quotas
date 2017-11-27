@@ -1,19 +1,26 @@
-# HSE06 calculations used for the DOS . #TODO Add the actual HSE06 part
+# HSE06 calculations used for the DOS .
 INCAR:
-  ALGO: Fast
+  AEXX: 0.25
+  ALGO: All
   EDIFF: 1.0e-04
   ENCUT: 500
   ISMEAR: -5
   ISPIN: 2
+  HFSCREEN: 0.2
   LCHARG: false
+  LHFCALC: True
   LORBIT: 11
   LREAL: AUTO
+  LVTOT: true
+  LVHAR: true
   LWAVE: false
   MAGMOM: 0
   NEDOS: 2000
   NELM: 100
   NELMIN: 4
   PREC: Accurate
+  PRECFOCK: Normal
+  TIME: 0.4
 KPOINTS:
   grid_density: 3000
 POTCAR:
