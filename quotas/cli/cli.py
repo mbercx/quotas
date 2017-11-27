@@ -147,13 +147,26 @@ def analyze():
 
 @analyze.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("directory", nargs=1)
-def wf(directory):
+@click.option("--plot", "-p", is_flag=True)
+def wf(directory, plot):
     """
     Calculate the work function from the local potential.
     """
     from quotas.cli.commands.analyze import wf
 
-    wf(directory=directory)
+    wf(directory=directory,
+       plot_potential=plot)
+
+
+@analyze.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("directory", nargs=1)
+def bandgap(directory):
+    """
+    Calculate the band gap from the electron energy levels.
+    """
+    from quotas.cli.commands.analyze import bandgap
+
+    bandgap(directory=directory)
 
 
 @main.group(context_settings=CONTEXT_SETTINGS)
