@@ -133,11 +133,22 @@ def dos(relax_dir, k_product, hse):
 
 
 @bulk.command(context_settings=CONTEXT_SETTINGS)
-def diel():
+@click.argument("relax_dir", nargs=1)
+@click.option("--k_product", "-k", default=80)
+@click.option("--hse_calc", "-H", is_flag=True)
+@click.option("--is_metal", "-m", is_flag=True)
+@click.option("--verbose", "-v", is_flag=True)
+def diel(relax_dir, k_product, hse_calc, is_metal, verbose):
     """
     Set up a dielectric function calculation.
     """
-    pass
+    from quotas.cli.commands.bulk import diel
+
+    diel(relax_dir=relax_dir,
+         k_product=k_product,
+         hse_calc=hse_calc,
+         is_metal=is_metal,
+         verbose=verbose)
 
 
 @main.group(context_settings=CONTEXT_SETTINGS)
