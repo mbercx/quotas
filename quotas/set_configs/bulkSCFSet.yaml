@@ -1,4 +1,4 @@
-# PBE+U calculations used for the DOS calculation of the bulk.
+# Standard SCF calculation settjngs
 INCAR:
   ALGO: Fast
   EDIFF: 1.0e-04

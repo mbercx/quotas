@@ -80,38 +80,38 @@ def dos(relax_dir, k_product, hse_calc=False):
 
     nbands = relax_out.parameters["NBANDS"]*3
 
-    # Add some typical extra settings for the DOS calculation
-    dos_incar = {"NEDOS": 2000, "NBANDS":nbands}
+    # Add settings for the DOS calculation
+    user_incar_settings = {"NEDOS": 2000, "NBANDS":nbands}
 
     if hse_calc:
 
-        # Set up the calculation
-        dos_calc = bulkDosHSESet.from_relax_calc(
-            relax_dir=relax_dir,
-            k_product=k_product,
-            user_incar_settings=dos_incar
-        )
+        hse_config = _load_yaml_config("HSESet")
+        user_incar_settings.update(hse_config["INCAR"])
 
         # Set up the calculation directory
         calculation_dir = os.path.join(os.path.split(relax_dir)[0], "hse_dos")
 
     else:
 
+        # TODO check if using the CHGCAR of scf actually works
         # Use the charge density from the geometry optimization
-        dos_incar["ICHARG"] = 11
+        user_incar_settings["ICHARG"] = 11
 
-        # Set up the calculation
-        dos_calc = bulkDosSet.from_relax_calc(
-            relax_dir=relax_dir,
-            k_product=k_product,
-            user_incar_settings=dos_incar
-        )
+        dftu_config = _load_yaml_config("DFTUSet")
+        user_incar_settings.update(dftu_config["INCAR"])
 
         # Set up the calculation directory
         calculation_dir = os.path.join(os.path.split(relax_dir)[0], "dftu_dos")
 
+    # Set up the calculation
+    dos_calculation = bulkSCFSet.from_relax_calc(
+        relax_dir=relax_dir,
+        k_product=k_product,
+        user_incar_settings=user_incar_settings
+    )
+
     # Write the input files of the calculation
-    dos_calc.write_input(calculation_dir)
+    dos_calculation.write_input(calculation_dir)
 
     if not hse_calc:
 
@@ -137,7 +137,8 @@ def diel(relax_dir, k_product, hse_calc, is_metal, verbose):
         user_incar_settings.update(hse_config["INCAR"])
 
         # Set up the calculation directory
-        calculation_dir = os.path.join(os.path.split(relax_dir)[0], "hse_diel")
+        calculation_dir = os.path.join(os.path.split(relax_dir)[0],
+                                       "hse_diel")
 
     else:
 
@@ -145,7 +146,8 @@ def diel(relax_dir, k_product, hse_calc, is_metal, verbose):
         user_incar_settings.update(dftu_config["INCAR"])
 
         # Set up the calculation directory
-        calculation_dir = os.path.join(os.path.split(relax_dir)[0], "dftu_diel")
+        calculation_dir = os.path.join(os.path.split(relax_dir)[0],
+                                       "dftu_diel")
 
     # For metals, add some Methfessel Paxton smearing
     if is_metal:
