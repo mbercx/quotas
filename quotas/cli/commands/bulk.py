@@ -2,8 +2,7 @@ import os
 import subprocess
 
 from monty.serialization import loadfn
-from quotas.calculation import bulkRelaxSet, bulkSCFSet, bulkDosSet,\
-    bulkDosHSESet
+from quotas.calculation import bulkRelaxSet, bulkSCFSet
 
 from pymatgen.core import Structure
 from pymatgen.io.vasp.outputs import Vasprun
