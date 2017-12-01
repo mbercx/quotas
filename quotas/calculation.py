@@ -91,10 +91,15 @@ class bulkSCFSet(DictSet):
             structure = Structure.from_file(os.path.join(relax_dir,
                                                          "CONTCAR.vasp"))
 
-        # Initialize the magnetic configuration in the same way as for the
-        # geometry optimization
+        # Try to initialize the magnetic configuration in the same way as for
+        # the geometry optimization
         incar = Incar.from_file(os.path.join(relax_dir, "INCAR"))
-        magmom = incar["MAGMOM"]
+        try:
+            magmom = incar["MAGMOM"]
+        except KeyError:
+            # If no magnetic moment is present, set it to zero
+            magmom = [0]*len(structure.sites)
+
         structure.add_site_property("magmom", magmom)
 
         return bulkSCFSet(structure=structure,
