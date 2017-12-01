@@ -138,17 +138,17 @@ def dos(relax_dir, k_product, hse):
 @click.option("--hse_calc", "-H", is_flag=True)
 @click.option("--is_metal", "-m", is_flag=True)
 @click.option("--verbose", "-v", is_flag=True)
-def diel(relax_dir, k_product, hse_calc, is_metal, verbose):
+def optics(relax_dir, k_product, hse_calc, is_metal, verbose):
     """
     Set up a dielectric function calculation.
     """
-    from quotas.cli.commands.bulk import diel
+    from quotas.cli.commands.bulk import optics
 
-    diel(relax_dir=relax_dir,
-         k_product=k_product,
-         hse_calc=hse_calc,
-         is_metal=is_metal,
-         verbose=verbose)
+    optics(relax_dir=relax_dir,
+           k_product=k_product,
+           hse_calc=hse_calc,
+           is_metal=is_metal,
+           verbose=verbose)
 
 
 @main.group(context_settings=CONTEXT_SETTINGS)

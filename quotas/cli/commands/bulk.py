@@ -119,7 +119,7 @@ def dos(relax_dir, k_product, hse_calc=False):
                          os.path.join(calculation_dir)])
 
 
-def diel(relax_dir, k_product, hse_calc, is_metal, verbose):
+def optics(relax_dir, k_product, hse_calc, is_metal, verbose):
 
     relax_dir = os.path.abspath(relax_dir)
 
@@ -137,7 +137,7 @@ def diel(relax_dir, k_product, hse_calc, is_metal, verbose):
 
         # Set up the calculation directory
         calculation_dir = os.path.join(os.path.split(relax_dir)[0],
-                                       "hse_diel")
+                                       "hse_optics")
 
     else:
 
@@ -146,7 +146,7 @@ def diel(relax_dir, k_product, hse_calc, is_metal, verbose):
 
         # Set up the calculation directory
         calculation_dir = os.path.join(os.path.split(relax_dir)[0],
-                                       "dftu_diel")
+                                       "dftu_optics")
 
     # For metals, add some Methfessel Paxton smearing
     if is_metal:
