@@ -35,16 +35,19 @@ def relax(bulk_file, is_metal, verbose):
     if verbose:
         print("Setting up calculation...")
 
-    # Set up the geometry optimization
-    if is_metal:
-        geo_optimization = bulkRelaxSet(structure=bulk_structure,
-                                        user_incar_settings={"ISMEAR":1,
-                                                             "SIGMA":0.2},
-                                        potcar_functional=DFT_FUNCTIONAL)
-    else:
-        geo_optimization = bulkRelaxSet(structure=bulk_structure,
-                                        potcar_functional=DFT_FUNCTIONAL)
+    user_incar_settings = {}
 
+    # For metals, add some Methfessel Paxton smearing
+    if is_metal:
+        user_incar_settings = {"ISMEAR": 1, "SIGMA": 0.2}
+
+
+    # Set up the geometry optimization
+    geo_optimization = bulkRelaxSet(structure=bulk_structure,
+                                    user_incar_settings=user_incar_settings,
+                                    potcar_functional=DFT_FUNCTIONAL)
+
+    # Set up the geometry optimization directory
     current_dir = os.path.dirname(".")
 
     relax_dir = os.path.join(current_dir, "bulk", "relax")
@@ -107,5 +110,62 @@ def dos(relax_dir, k_product, hse_calc=False):
         subprocess.call(["cp", os.path.join(relax_dir, "CHGCAR"),
                          os.path.join(calculation_dir)])
 
-def diel():
-    pass
+def diel(relax_dir, is_metal, hse_calc, verbose):
+
+    relax_dir = os.path.abspath(relax_dir)
+
+    relax_out = Vasprun(os.path.join(relax_dir, "vasprun.xml"))
+
+    nbands = relax_out.parameters["NBANDS"] * 3
+
+    if hse_calc:
+
+        # Set up the calculation
+        dos_calc = bulkDosHSESet.from_relax_calc(
+            relax_dir=relax_dir,
+            k_product=k_product,
+            user_incar_settings=dos_incar
+        )
+
+        # Set up the calculation directory
+        calculation_dir = os.path.join(os.path.split(relax_dir)[0], "hse_dos")
+
+    else:
+
+        # Set up the calculation
+        dos_calc = bulkDosSet.from_relax_calc(
+            relax_dir=relax_dir,
+            k_product=k_product,
+            user_incar_settings=dos_incar
+        )
+
+        # Set up the calculation directory
+        calculation_dir = os.path.join(os.path.split(relax_dir)[0], "dftu_dos")
+
+
+
+    if verbose:
+        print("Setting up calculation...")
+
+    user_incar_settings = {"NEDOS": 2000, "NBANDS": nbands}
+
+    # For metals, add some Methfessel Paxton smearing
+    if is_metal:
+        user_incar_settings.update({"ISMEAR": 1, "SIGMA": 0.3})
+
+
+    # Set up the geometry optimization
+    geo_optimization = bulkRelaxSet(structure=bulk_structure,
+                                    user_incar_settings=user_incar_settings,
+                                    potcar_functional=DFT_FUNCTIONAL)
+
+    # Set up the geometry optimization directory
+    current_dir = os.path.dirname(".")
+
+    relax_dir = os.path.join(current_dir, "bulk", "diel")
+
+    # Write the input files to the geo optimization directory
+    geo_optimization.write_input(relax_dir)
+
+    if verbose:
+        print("Written input to " + relax_dir)
