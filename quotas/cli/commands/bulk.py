@@ -144,6 +144,8 @@ def diel(relax_dir, k_product, hse_calc, is_metal, verbose):
         dftu_config = _load_yaml_config("DFTUSet")
         user_incar_settings.update(dftu_config["INCAR"])
 
+        print(user_incar_settings)
+
         # Set up the calculation directory
         calculation_dir = os.path.join(os.path.split(relax_dir)[0], "dftu_diel")
 
