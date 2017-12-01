@@ -159,6 +159,8 @@ def diel(relax_dir, k_product, hse_calc, is_metal, verbose):
     if verbose:
         print("Setting up calculation...")
 
+    print(user_incar_settings)
+
     diel_calculation = bulkSCFSet.from_relax_calc(
         relax_dir=relax_dir,
         k_product=k_product,
