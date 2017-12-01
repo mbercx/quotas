@@ -43,7 +43,7 @@ class bulkSCFSet(DictSet):
 
     def __init__(self, structure, k_product, **kwargs):
         super(bulkSCFSet, self).__init__(
-            structure, bulkDosHSESet.CONFIG, **kwargs)
+            structure, bulkSCFSet.CONFIG, **kwargs)
         self.k_product = k_product
         self.kwargs = kwargs
 
