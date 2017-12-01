@@ -1,4 +1,4 @@
-# PBE+U calculations used for the DOS calculation of the bulk.
+# HSE06 calculation settings
 INCAR:
   AEXX: 0.25
   ALGO: All

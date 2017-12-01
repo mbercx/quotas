@@ -1,4 +1,4 @@
-bulkSCFSet.yaml# PBE+U settings for VASP calculations
+# PBE+U settings for VASP calculations
 INCAR:
   LDAU: true
   LDAUJ:
