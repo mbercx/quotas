@@ -134,7 +134,7 @@ def diel(relax_dir, k_product, hse_calc, is_metal, verbose):
     if hse_calc:
 
         hse_config = _load_yaml_config("HSESet")
-        user_incar_settings.update(hse_config)
+        user_incar_settings.update(hse_config["INCAR"])
 
         # Set up the calculation directory
         calculation_dir = os.path.join(os.path.split(relax_dir)[0], "hse_diel")
@@ -142,7 +142,7 @@ def diel(relax_dir, k_product, hse_calc, is_metal, verbose):
     else:
 
         dftu_config = _load_yaml_config("DFTUSet")
-        user_incar_settings.update(dftu_config)
+        user_incar_settings.update(dftu_config["INCAR"])
 
         # Set up the calculation directory
         calculation_dir = os.path.join(os.path.split(relax_dir)[0], "dftu_diel")
