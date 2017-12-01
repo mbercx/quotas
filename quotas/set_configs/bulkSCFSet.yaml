@@ -10,12 +10,9 @@ INCAR:
   LREAL: AUTO
   LWAVE: false
   MAGMOM: 0
-  NEDOS: 2000
   NELM: 100
   NELMIN: 4
   PREC: Accurate
-KPOINTS:
-  grid_density: 3000
 POTCAR:
   Ac: Ac
   Ag: Ag

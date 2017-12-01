@@ -1,7 +1,9 @@
 import os
 import subprocess
 
-from quotas.calculation import bulkRelaxSet, bulkDosSet, bulkDosHSESet
+from monty.serialization import loadfn
+from quotas.calculation import bulkRelaxSet, bulkSCFSet, bulkDosSet,\
+    bulkDosHSESet
 
 from pymatgen.core import Structure
 from pymatgen.io.vasp.outputs import Vasprun
@@ -10,7 +12,14 @@ from pymatgen.io.vasp.outputs import Vasprun
 Module that defines the commands for setting up bulk calculations.
 """
 
+MODULE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "../../set_configs")
 DFT_FUNCTIONAL = "PBE_54"
+
+
+def _load_yaml_config(filename):
+    config = loadfn(os.path.join(MODULE_DIR, "%s.yaml" % filename))
+    return config
 
 
 def relax(bulk_file, is_metal, verbose):
@@ -110,7 +119,8 @@ def dos(relax_dir, k_product, hse_calc=False):
         subprocess.call(["cp", os.path.join(relax_dir, "CHGCAR"),
                          os.path.join(calculation_dir)])
 
-def diel(relax_dir, is_metal, hse_calc, verbose):
+
+def diel(relax_dir, k_product, hse_calc, is_metal, verbose):
 
     relax_dir = os.path.abspath(relax_dir)
 
@@ -118,54 +128,45 @@ def diel(relax_dir, is_metal, hse_calc, verbose):
 
     nbands = relax_out.parameters["NBANDS"] * 3
 
+    # Add the INCAR settings for the dielectric function calculation
+    user_incar_settings = {"LOPTICS":True, "NEDOS":2000, "NBANDS": nbands}
+
     if hse_calc:
 
-        # Set up the calculation
-        dos_calc = bulkDosHSESet.from_relax_calc(
-            relax_dir=relax_dir,
-            k_product=k_product,
-            user_incar_settings=dos_incar
-        )
+        hse_config = _load_yaml_config("HSESet")
+        user_incar_settings.update(hse_config)
 
         # Set up the calculation directory
-        calculation_dir = os.path.join(os.path.split(relax_dir)[0], "hse_dos")
+        calculation_dir = os.path.join(os.path.split(relax_dir)[0], "hse_diel")
 
     else:
 
-        # Set up the calculation
-        dos_calc = bulkDosSet.from_relax_calc(
-            relax_dir=relax_dir,
-            k_product=k_product,
-            user_incar_settings=dos_incar
-        )
+        dftu_config = _load_yaml_config("DFTUSet")
+        user_incar_settings.update(dftu_config)
 
         # Set up the calculation directory
-        calculation_dir = os.path.join(os.path.split(relax_dir)[0], "dftu_dos")
-
-
-
-    if verbose:
-        print("Setting up calculation...")
-
-    user_incar_settings = {"NEDOS": 2000, "NBANDS": nbands}
+        calculation_dir = os.path.join(os.path.split(relax_dir)[0], "dftu_diel")
 
     # For metals, add some Methfessel Paxton smearing
     if is_metal:
+
+        if verbose:
+            print("Metal option detected. Adding Methfessel Paxton smearing.")
+
         user_incar_settings.update({"ISMEAR": 1, "SIGMA": 0.3})
 
+    # Set up the calculation
+    if verbose:
+        print("Setting up calculation...")
 
-    # Set up the geometry optimization
-    geo_optimization = bulkRelaxSet(structure=bulk_structure,
-                                    user_incar_settings=user_incar_settings,
-                                    potcar_functional=DFT_FUNCTIONAL)
+    diel_calculation = bulkSCFSet.from_relax_calc(
+        relax_dir=relax_dir,
+        k_product=k_product,
+        user_incar_settings=user_incar_settings
+    )
 
-    # Set up the geometry optimization directory
-    current_dir = os.path.dirname(".")
-
-    relax_dir = os.path.join(current_dir, "bulk", "diel")
-
-    # Write the input files to the geo optimization directory
-    geo_optimization.write_input(relax_dir)
+    # Write the input files to the calculation directory
+    diel_calculation.write_input(calculation_dir)
 
     if verbose:
-        print("Written input to " + relax_dir)
+        print("Written input to " + calculation_dir)
