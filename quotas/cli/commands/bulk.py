@@ -80,7 +80,7 @@ def dos(relax_dir, k_product, hse_calc=False):
     nbands = relax_out.parameters["NBANDS"]*3
 
     # Add settings for the DOS calculation
-    user_incar_settings = {"NEDOS": 2000, "NBANDS":nbands}
+    user_incar_settings = {"NEDOS": 2000, "NBANDS":nbands, "LORBIT":11}
 
     if hse_calc:
 

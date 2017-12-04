@@ -6,7 +6,6 @@ INCAR:
   ISMEAR: -5
   ISPIN: 2
   LCHARG: false
-  LORBIT: 11
   LREAL: AUTO
   LWAVE: false
   MAGMOM: 0
