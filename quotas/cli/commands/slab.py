@@ -23,7 +23,7 @@ DFT_FUNCTIONAL = "PBE_54"
 # TODO Find way to make potential setting more user friendly
 
 
-def setup(bulk_file, miller_indices, thickness, vacuum, verbose, write_cif):
+def setup(bulk_file, miller_indices, thickness, vacuum, write_cif, verbose):
 
     if verbose:
         print("Importing bulk structure...")

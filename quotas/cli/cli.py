@@ -10,6 +10,7 @@ Command line interface for the quotas package.
 # This is used to make '-h' a shorter way to access the CLI help
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
+
 @click.group(context_settings=CONTEXT_SETTINGS)
 def main():
     """
@@ -34,9 +35,9 @@ def slab():
               help="Minimum thickness of the vacuum layer.")
 @click.option("--thickness", "-t", default=20,
               help="Minimum thickness of the slab, in Angstroms.")
-@click.option("--verbose", "-v", is_flag=True)
 @click.option("--write_cif", "-c", is_flag=True)
-def setup(bulk_file, miller_indices, vacuum, thickness, verbose, write_cif):
+@click.option("--verbose", "-v", is_flag=True)
+def setup(bulk_file, miller_indices, vacuum, thickness, write_cif, verbose):
     """
     Set up slabs from the bulk geometry.
     """
@@ -45,7 +46,7 @@ def setup(bulk_file, miller_indices, vacuum, thickness, verbose, write_cif):
     #TODO Add checks for the miller_indices
     miller_indices = [int(number) for number in miller_indices]
 
-    setup(bulk_file, miller_indices, thickness, vacuum, verbose, write_cif)
+    setup(bulk_file, miller_indices, thickness, vacuum, write_cif, verbose)
 
 
 @slab.command(context_settings=CONTEXT_SETTINGS)
