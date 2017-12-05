@@ -21,7 +21,7 @@ def _load_yaml_config(filename):
     return config
 
 
-def relax(bulk_file, is_metal, verbose):
+def relax(bulk_file, hse_calc, is_metal, verbose):
 
     if verbose:
         print("Reading structure from file...")
@@ -45,6 +45,24 @@ def relax(bulk_file, is_metal, verbose):
 
     user_incar_settings = {}
 
+    if hse_calc:
+
+        hse_config = _load_yaml_config("HSESet")
+        user_incar_settings.update(hse_config["INCAR"])
+
+        # Set up the calculation directory
+        current_dir = os.path.dirname(".")
+        calculation_dir = os.path.join(current_dir, "bulk", "hse_relax")
+
+    else:
+
+        dftu_config = _load_yaml_config("DFTUSet")
+        user_incar_settings.update(dftu_config["INCAR"])
+
+        # Set up the calculation directory
+        current_dir = os.path.dirname(".")
+        calculation_dir = os.path.join(current_dir, "bulk", "dftu_relax")
+
     # For metals, add some Methfessel Paxton smearing
     if is_metal:
         user_incar_settings = {"ISMEAR": 1, "SIGMA": 0.2}
@@ -55,16 +73,11 @@ def relax(bulk_file, is_metal, verbose):
                                     user_incar_settings=user_incar_settings,
                                     potcar_functional=DFT_FUNCTIONAL)
 
-    # Set up the geometry optimization directory
-    current_dir = os.path.dirname(".")
-
-    relax_dir = os.path.join(current_dir, "bulk", "relax")
-
     # Write the input files to the geo optimization directory
-    geo_optimization.write_input(relax_dir)
+    geo_optimization.write_input(calculation_dir)
 
     if verbose:
-        print("Written input to " + relax_dir)
+        print("Written input to " + calculation_dir)
 
 
 def dos(relax_dir, k_product, hse_calc=False):
