@@ -105,15 +105,17 @@ def bulk():
 
 @bulk.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("bulk_file", nargs=1)
+@click.option("--hse_calc", "-H", is_flag=True)
 @click.option("--is_metal", "-m", is_flag=True)
 @click.option("--verbose", "-v", is_flag=True)
-def relax(bulk_file, is_metal, verbose):
+def relax(bulk_file, hse_calc, is_metal, verbose):
     """
     Set up the geometry optimization.
     """
     from quotas.cli.commands.bulk import relax
 
     relax(bulk_file=bulk_file,
+          hse_calc=hse_calc,
           is_metal=is_metal,
           verbose=verbose)
 
@@ -121,8 +123,8 @@ def relax(bulk_file, is_metal, verbose):
 @bulk.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("relax_dir", nargs=1)
 @click.option("--k_product", "-k", default=80)
-@click.option("--hse", "-H", is_flag=True)
-def dos(relax_dir, k_product, hse):
+@click.option("--hse_calc", "-H", is_flag=True)
+def dos(relax_dir, k_product, hse_calc):
     """
     Set up the Density of states calculation.
     """
@@ -130,7 +132,7 @@ def dos(relax_dir, k_product, hse):
 
     dos(relax_dir=relax_dir,
         k_product=k_product,
-        hse_calc=hse)
+        hse_calc=hse_calc)
 
 
 @bulk.command(context_settings=CONTEXT_SETTINGS)
