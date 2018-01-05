@@ -4,7 +4,7 @@ import os
 import subprocess
 import string
 
-from quotas.calculation import slabRelaxSet, slabWorkFunctionSet, \
+from quotas.sets import slabRelaxSet, slabWorkFunctionSet, \
     slabWorkFunctionHSESet
 from quotas.core import find_atomic_layers
 

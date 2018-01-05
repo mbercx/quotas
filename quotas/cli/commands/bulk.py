@@ -2,7 +2,7 @@ import os
 import subprocess
 
 from monty.serialization import loadfn
-from quotas.calculation import bulkRelaxSet, bulkSCFSet
+from quotas.sets import bulkRelaxSet, bulkSCFSet
 
 from pymatgen.core import Structure
 from pymatgen.io.vasp.outputs import Vasprun
@@ -21,7 +21,7 @@ def _load_yaml_config(filename):
     return config
 
 
-def relax(bulk_file, hse_calc, is_metal, verbose):
+def relax(bulk_file, is_metal=False, hse_calc=False, verbose=False):
 
     if verbose:
         print("Reading structure from file...")
