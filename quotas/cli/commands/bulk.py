@@ -65,7 +65,7 @@ def relax(bulk_file, is_metal=False, hse_calc=False, verbose=False):
 
     # For metals, add some Methfessel Paxton smearing
     if is_metal:
-        user_incar_settings = {"ISMEAR": 1, "SIGMA": 0.2}
+        user_incar_settings.update({"ISMEAR": 1, "SIGMA": 0.2})
 
 
     # Set up the geometry optimization
