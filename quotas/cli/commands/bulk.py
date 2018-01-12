@@ -106,8 +106,6 @@ def dos(relax_dir, k_product, hse_calc=False):
     else:
 
         # TODO check if using the CHGCAR of scf actually works
-        # Use the charge density from the geometry optimization
-        user_incar_settings["ICHARG"] = 11
 
         dftu_config = _load_yaml_config("DFTUSet")
         user_incar_settings.update(dftu_config["INCAR"])
@@ -125,11 +123,11 @@ def dos(relax_dir, k_product, hse_calc=False):
     # Write the input files of the calculation
     dos_calculation.write_input(calculation_dir)
 
-    if not hse_calc:
+    #if not hse_calc:
 
         # Copy the charge density from the geometry optimization
-        subprocess.call(["cp", os.path.join(relax_dir, "CHGCAR"),
-                         os.path.join(calculation_dir)])
+        #subprocess.call(["cp", os.path.join(relax_dir, "CHGCAR"),
+                         #os.path.join(calculation_dir)])
 
 
 def optics(relax_dir, k_product, hse_calc, is_metal, verbose):
