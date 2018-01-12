@@ -37,7 +37,7 @@ def slab():
 @click.option("--thickness", "-t", default=20,
               help="Minimum thickness of the slab, in angstrom. Defaults to "
                    "20 angstrom.")
-@click.option("--write_cif", "-c", is_flag=True)
+@click.option("--write_cif", "-w", is_flag=True)
 @click.option("--verbose", "-v", is_flag=True)
 def setup(bulk_file, miller_indices, vacuum, thickness, write_cif, verbose):
     """
