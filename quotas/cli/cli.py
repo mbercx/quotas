@@ -54,10 +54,12 @@ def setup(bulk_file, miller_indices, vacuum, thickness, write_cif, verbose):
 @slab.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("slab_file", nargs=1)
 @click.option("--fix_part", "-f", default="center",
-              help="Part of the slab to fix in the geometry optimization.")
+              help="Part of the slab to fix in the geometry optimization. "
+                   "Defaults to 'center', which is currently the only "
+                   "option. So it's not much of an option, really.")
 @click.option("--fix_thickness", "-b", default=8,
               help="Number of layers fixed as bulk in the geometry "
-                   "optimization.")
+                   "optimization. Defaults to 8.")
 @click.option("--is_metal", "-m", is_flag=True)
 @click.option("--verbose", "-v", is_flag=True)
 def relax(slab_file, fix_part, fix_thickness, is_metal, verbose):
