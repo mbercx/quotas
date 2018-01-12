@@ -32,9 +32,11 @@ def slab():
 @click.argument("miller_indices", nargs=1)
 @click.argument("bulk_file", nargs=1)
 @click.option("--vacuum", "-V", default=float(15),
-              help="Minimum thickness of the vacuum layer.")
+              help="Minimum thickness of the vacuum layer, in angstrom. "
+                   "Defaults to 15 angstrom.")
 @click.option("--thickness", "-t", default=20,
-              help="Minimum thickness of the slab, in Angstroms.")
+              help="Minimum thickness of the slab, in angstrom. Defaults to "
+                   "20 angstrom.")
 @click.option("--write_cif", "-c", is_flag=True)
 @click.option("--verbose", "-v", is_flag=True)
 def setup(bulk_file, miller_indices, vacuum, thickness, write_cif, verbose):
