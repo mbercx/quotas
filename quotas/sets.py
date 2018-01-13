@@ -68,7 +68,8 @@ class bulkSCFSet(DictSet):
         # Use k_product to calculate kpoints
         abc = self.structure.lattice.abc
         kpt_calc = [int(self.k_product / abc[0] + 0.5),
-                    int(self.k_product / abc[1] + 0.5), 1]
+                    int(self.k_product / abc[1] + 0.5),
+                    int(self.k_product / abc[2] + 0.5)]
 
         kpoints = Kpoints.gamma_automatic(kpts=kpt_calc)
 
