@@ -8,6 +8,8 @@ from quotas.sets import slabRelaxSet, slabWorkFunctionSet, \
     slabWorkFunctionHSESet
 from quotas.core import find_atomic_layers
 
+from monty.serialization import loadfn
+
 from pymatgen.core.structure import Structure
 from pymatgen.core.surface import SlabGenerator
 from pymatgen.io.vasp.outputs import Vasprun
@@ -17,9 +19,17 @@ Setup scripts for the calculations of the quotas package.
 
 """
 
+MODULE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "../../set_configs")
+DFT_FUNCTIONAL = "PBE_54"
+
+
+def _load_yaml_config(filename):
+    config = loadfn(os.path.join(MODULE_DIR, "%s.yaml" % filename))
+    return config
+
 # Parameters
 MAX_KPAR = 30
-DFT_FUNCTIONAL = "PBE_54"
 # TODO Find way to make potential setting more user friendly
 
 
@@ -156,12 +166,32 @@ def wf(relax_dir, k_product, hse_calc=False):
     """
     relax_dir = os.path.abspath(relax_dir)
 
-    # Set up the calculation
-    work_function_calc = \
-        slabWorkFunctionSet.from_relax_calc(relax_dir, k_product=k_product)
+    user_incar_settings = {}
 
-    calculation_dir = os.path.join(os.path.split(relax_dir)[0],
-                                   "work_function")
+    if hse_calc:
+
+        hse_config = _load_yaml_config("HSESet")
+        user_incar_settings.update(hse_config["INCAR"])
+
+        # Set up the calculation directory
+        calculation_dir = os.path.join(os.path.split(relax_dir)[0],
+                                       "hse_wf")
+
+    else:
+
+        dftu_config = _load_yaml_config("DFTUSet")
+        user_incar_settings.update(dftu_config["INCAR"])
+
+        # Set up the calculation directory
+        calculation_dir = os.path.join(os.path.split(relax_dir)[0],
+                                       "dftu_wf")
+
+    # Set up the calculation
+    work_function_calc = slabWorkFunctionSet.from_relax_calc(
+        relax_dir=relax_dir,
+        k_product=k_product,
+        user_incar_settings=user_incar_settings
+    )
 
     # Write the input files of the calculation
     work_function_calc.write_input(calculation_dir)
