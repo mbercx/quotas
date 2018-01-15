@@ -48,6 +48,9 @@ def nkp(directory):
 
     """
 
+    # TODO Seems to fail. Could be related to the fact that the symmetry
+    # tolerances are different.
+
     input_dir = os.path.abspath(directory)
     structure = Structure.from_file(os.path.join(input_dir, "POSCAR"))
     kpoints = Kpoints.from_file(os.path.join(input_dir, "KPOINTS"))
