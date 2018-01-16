@@ -228,7 +228,7 @@ def dos(relax_dir, k_product, hse_calc=False):
     else:
 
         # Use the charge density from the geometry optimization
-        dos_incar["ICHARG"] = 11
+        # dos_incar["ICHARG"] = 11
 
         # Set up the calculation
         dos_calc = slabWorkFunctionSet.from_relax_calc(
@@ -243,8 +243,8 @@ def dos(relax_dir, k_product, hse_calc=False):
     # Write the input files of the calculation
     dos_calc.write_input(calculation_dir)
 
-    if not hse_calc:
-
-        # Copy the charge density from the geometry optimization
-        subprocess.call(["cp", os.path.join(relax_dir, "CHGCAR"),
-                         os.path.join(calculation_dir)])
+    # if not hse_calc:
+    #
+    #     # Copy the charge density from the geometry optimization
+    #     subprocess.call(["cp", os.path.join(relax_dir, "CHGCAR"),
+    #                      os.path.join(calculation_dir)])
