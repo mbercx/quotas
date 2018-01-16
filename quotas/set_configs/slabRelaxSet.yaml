@@ -125,7 +125,7 @@ INCAR:
   LWAVE: false
   MAGMOM: 0
   NELM: 100
-  NELMIN: 8
+  NELMIN: 5
   NSW: 300
   PREC: Normal
 KPOINTS:
