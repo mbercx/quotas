@@ -13,6 +13,7 @@ from monty.serialization import loadfn
 from pymatgen.core.structure import Structure
 from pymatgen.core.surface import SlabGenerator
 from pymatgen.io.vasp.outputs import Vasprun
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 """
 Setup scripts for the calculations of the quotas package.
@@ -34,12 +35,31 @@ MAX_KPAR = 30
 
 
 def setup(bulk_file, miller_indices, thickness, vacuum, write_cif, verbose):
+    """
+    Set up the slab from the bulk structure file. Automatically converts the
+    bulk structure to the conventional lattice.
+
+    Args:
+        bulk_file:
+        miller_indices:
+        thickness:
+        vacuum:
+        write_cif:
+        verbose:
+
+    Returns:
+
+    """
 
     if verbose:
         print("Importing bulk structure...")
 
     # Import the bulk structure
     bulk_structure = Structure.from_file(bulk_file)
+
+    # Convert the structure to the conventional lattice
+    spg = SpacegroupAnalyzer(bulk_structure)
+    bulk_structure = spg.get_conventional_standard_structure()
 
     # Check if the provided structure is oxidation state decorated.
     try:
