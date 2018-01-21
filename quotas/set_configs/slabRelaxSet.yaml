@@ -12,7 +12,7 @@ INCAR:
   ISMEAR: 0
   SIGMA: 0.05
   ISPIN: 2
-  LCHARG: True # Charge density is usually used in the dos calculation, and can be passed on to facilitate the work function calculation
+  LCHARG: False
   LDAU: true
   LDAUJ:
     Ti: 0
