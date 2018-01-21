@@ -90,7 +90,12 @@ def dos(relax_dir, k_product, hse_calc=False):
 
     relax_out = Vasprun(os.path.join(relax_dir, "vasprun.xml"))
 
-    nbands = relax_out.parameters["NBANDS"]*3
+    # Make sure enough bands are included in the DOS calculation for the
+    # quotas model.
+    nbands = relax_out.parameters["NBANDS"]
+    while 2*relax_out.parameters['NELECT'] + 4*len(
+            relax_out.initial_structure.sites) > nbands:
+        nbands += relax_out.parameters["NBANDS"]
 
     # Add settings for the DOS calculation
     user_incar_settings = {"NEDOS": 2000, "NBANDS":nbands, "LORBIT":11}
