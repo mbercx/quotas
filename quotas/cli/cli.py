@@ -190,6 +190,16 @@ def bandgap(directory):
 
     bandgap(directory=directory)
 
+@analyze.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("vasprun", nargs=1)
+def pdos(vasprun):
+    """
+    Calculate the band gap from the electron energy levels.
+    """
+    from quotas.cli.commands.analyze import pdos
+
+    pdos(vasprun=vasprun)
+
 
 @main.group(context_settings=CONTEXT_SETTINGS)
 def util():
