@@ -143,6 +143,17 @@ def relax(slab_file, fix_part, fix_thickness, is_metal, verbose):
 
     slab_structure = Structure.from_file(slab_file)
 
+    # If no magnetic configuration is given, start the calculation in a
+    # non-magnetic state.
+    if "magmom" not in slab_structure.site_properties.keys():
+
+        if verbose:
+            print("No magnetic configuration found. Adding magmom = 0 for all "
+                  "sites.")
+
+        slab_structure.add_site_property("magmom",
+                                         [0] * len(slab_structure.sites))
+
     if verbose:
         print("Setting up calculation...")
 
