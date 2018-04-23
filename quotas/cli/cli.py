@@ -277,11 +277,12 @@ def firetask():
     firetask_test()
 
 @test.command(context_settings=CONTEXT_SETTINGS)
-def workflow():
+@click.argument("slab_file", nargs=1)
+def workflow(slab_file):
     """
     Test the workflow script.
 
     """
-    from quotas.workflow import workflow_test
+    from quotas.workflow import dos_workflow
 
-    workflow_test()
+    dos_workflow(slab_file)
