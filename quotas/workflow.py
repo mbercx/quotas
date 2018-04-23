@@ -58,7 +58,7 @@ def dos_workflow(structure_file):
     # TODO Allow scripts for various clusters
 
     job_script = TemplateWriterTask(
-        {"template":os.path.join(TEMPLATE_DIR, "job_leibniz.sh"),
+        {"template_file":os.path.join(TEMPLATE_DIR, "job_leibniz.sh"),
          "context":{"name":structure_file[:6] + "_rel", "nodes": 4},
          "output_file":"job_leibniz.sh"}
     )
