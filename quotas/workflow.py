@@ -59,7 +59,8 @@ def dos_workflow(structure_file):
 
     job_script = TemplateWriterTask(
         {"template":os.path.join(TEMPLATE_DIR, "job_leibniz.sh"),
-         "context":{"name":structure_file[:6] + "_rel", "nodes": 4}}
+         "context":{"name":structure_file[:6] + "_rel", "nodes": 4},
+         "output_file":"job_leibniz.sh"}
     )
 
     more_job = ScriptTask.from_str("more job_leibniz.sh")
