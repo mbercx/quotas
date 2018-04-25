@@ -71,7 +71,7 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
                      "pre_rocket": "null",
                      "post_rocket": "null"
     }
-    queue_adapter = CommonAdapter(queue_adapter)
+    queue_adapter = CommonAdapter.from_dict(queue_adapter)
 
     ## FireWork 1
 
