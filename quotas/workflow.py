@@ -16,7 +16,7 @@ Workflow setup for the quotas calculations.
 TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                             "templates")
 
-class slabRelax(FireTaskBase):
+class slabRelaxTask(FireTaskBase):
     """
     FireTask that sets up a slab geometry optimization.
 
@@ -24,14 +24,17 @@ class slabRelax(FireTaskBase):
     _fw_name = "Slab Relaxation"
 
     def run_task(self, fw_spec):
-        structure_file = fw_spec['structure_file']
-        fix_part = fw_spec['fix_part']
-        fix_thickness = fw_spec['fix_thickness']
-        is_metal = fw_spec['is_metal']
+        structure_file = fw_spec["structure_file"]
+        fix_part = fw_spec["fix_part"]
+        fix_thickness = fw_spec["fix_thickness"]
+        is_metal = fw_spec["is_metal"]
+
+        from quotas.cli.commands.slab import relax
+
+        relax(structure_file, fix_part, fix_thickness, is_metal)
 
 
-
-def dos_workflow(structure_file):
+def dos_workflow(structure_file, fix_thickness, is_metal):
     """
     Finally time for the real deal. I want to calculate the DOS and
     workfunction based on a structure file.
@@ -50,11 +53,14 @@ def dos_workflow(structure_file):
     ## FireWork 1
 
     # Set up the geometry optimization from the structure file
-    # Turn quotas cli method into FireTask?
+    setup_relax = slabRelaxTask(
+        {"structure_file":structure_file,
+         "fix_part":"center",
+         "fix_thickness":fix_thickness,
+         "is_metal":is_metal}
+    )
 
     # Set up the job script
-    # Maybe use a TemplateWriterTask?
-
     # TODO Allow scripts for various clusters
 
     job_script = TemplateWriterTask(
@@ -63,15 +69,14 @@ def dos_workflow(structure_file):
          "output_file":"job_leibniz.sh"}
     )
 
-    more_job = ScriptTask.from_str("more job_leibniz.sh")
+    # Run the jobscript.
+    job_submission = ScriptTask.from_str("msub job_leibniz.sh")
 
-    fw = Firework([job_script, more_job])
+    fw = Firework([setup_relax, job_script, job_submission])
 
+    # Launch the workflow
     launchpad.add_wf(fw)
     launch_rocket(launchpad)
-
-    # Run the jobscript.
-    # This can be a ScriptTask?
 
     # -----> Here we would add a check to see if the job completed
     # successfully. If not, we can add another FireWork that makes the
