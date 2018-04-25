@@ -7,7 +7,7 @@ from fireworks import FireTaskBase, Firework, LaunchPad, ScriptTask, \
     FileTransferTask, FWorker, Workflow, FWAction
 from fireworks.core.rocket_launcher import launch_rocket
 from fireworks.queue.queue_launcher import launch_rocket_to_queue
-from fireworks.queue.queue_adapter import QueueAdapterBase
+from fireworks.user_objects.queue_adapters.common_adapter import CommonAdapter
 from fw_tutorials.firetask.addition_task import AdditionTask
 
 """
@@ -58,8 +58,7 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
     fireworker = FWorker(name="leibniz")
 
     # Set up the queue adapter
-    queue_adapter = {"_fw_name": "TestAdapter",
-                     "_fw_q_type":"PBS",
+    queue_adapter = {"_fw_q_type":"PBS",
                      "rocket_launch":"source ~/local/envs/pymatgen.env; "
                                      "rlaunch singleshot",
                      "nnodes": "1",
@@ -72,6 +71,7 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
                      "pre_rocket": "null",
                      "post_rocket": "null"
     }
+    queue_adapter = CommonAdapter(queue_adapter)
 
     ## FireWork 1
 
@@ -107,8 +107,7 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
 
     # Launch the workflow
     launchpad.add_wf(fw)
-    launch_rocket_to_queue(launchpad, fireworker,
-                           QueueAdapterBase(queue_adapter))
+    launch_rocket_to_queue(launchpad, fireworker, queue_adapter)
 
     # -----> Here we would add a check to see if the job completed
     # successfully. If not, we can add another FireWork that makes the
