@@ -136,12 +136,12 @@ def setup(bulk_file, miller_indices, thickness, vacuum, write_cif, verbose):
             slab_structure.to(fmt="cif", filename=slab_file + ".cif")
 
 
-def relax(slab_file, fix_part, fix_thickness, is_metal, verbose):
+def relax(structure_file, fix_part, fix_thickness, is_metal, verbose):
 
     if verbose:
         print("Reading structure from file...")
 
-    slab_structure = Structure.from_file(slab_file)
+    slab_structure = Structure.from_file(structure_file)
 
     # If no magnetic configuration is given, start the calculation in a
     # non-magnetic state.
@@ -178,7 +178,7 @@ def relax(slab_file, fix_part, fix_thickness, is_metal, verbose):
     # TODO Naming is difficult because of the lack of a jsonable Slab class. Fix this after fixing that problem.
 
     relax_dir = os.path.join(
-        current_dir, slab_file.strip(
+        current_dir, structure_file.strip(
             slab_structure.composition.reduced_formula + "_"
         ).strip(".json"), fix_part + "_" + "relax")
 
