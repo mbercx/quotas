@@ -65,7 +65,7 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
 
     # Go to the directory for the geometry optimization
     cd_relax = PyTask(func="os.chdir",
-                      inputs="relax_dir")
+                      inputs=["relax_dir"])
 
     # Set up the job script
     # TODO Allow scripts for various clusters
@@ -81,7 +81,7 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
 
     fw = Firework([setup_relax, cd_relax, job_script, job_submission],
                   {setup_relax: [cd_relax],
-                   cd_relax:[job_script],
+                   cd_relax: [job_script],
                    job_script: [job_submission]})
 
     # Launch the workflow
