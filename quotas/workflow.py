@@ -56,10 +56,10 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
 
     # Set up the geometry optimization from the structure file
     setup_relax = PyTask(func="quotas.cli.commands.slab.relax",
-                         kwargs=[structure_file,
-                                 fix_part,
-                                 fix_thickness,
-                                 is_metal])
+                         kwargs={"structure_file":structure_file,
+                                 "fix_part":fix_part,
+                                 "fix_thickness":fix_thickness,
+                                 "is_metal":is_metal})
 
     # Set up the job script
     # TODO Allow scripts for various clusters
