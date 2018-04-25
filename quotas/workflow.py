@@ -3,8 +3,8 @@
 import os
 
 from fireworks import FireTaskBase, Firework, LaunchPad, ScriptTask, \
-    TemplateWriterTask,\
-    FileTransferTask, FWorker, Workflow
+    TemplateWriterTask, PyTask, \
+    FileTransferTask, FWorker, Workflow, FWAction
 from fireworks.core.rocket_launcher import launch_rocket, rapidfire
 from fw_tutorials.firetask.addition_task import AdditionTask
 
@@ -33,8 +33,10 @@ class slabRelaxTask(FireTaskBase):
 
         relax(structure_file, fix_part, fix_thickness, is_metal)
 
+        return FWAction()
 
-def dos_workflow(structure_file, fix_thickness, is_metal):
+
+def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
     """
     Finally time for the real deal. I want to calculate the DOS and
     workfunction based on a structure file.
@@ -53,12 +55,11 @@ def dos_workflow(structure_file, fix_thickness, is_metal):
     ## FireWork 1
 
     # Set up the geometry optimization from the structure file
-    setup_relax = slabRelaxTask(
-        {"structure_file":structure_file,
-         "fix_part":"center",
-         "fix_thickness":fix_thickness,
-         "is_metal":is_metal}
-    )
+    setup_relax = PyTask(func="quotas.cli.commands.slab.relax",
+                         kwargs=[structure_file,
+                                 fix_part,
+                                 fix_thickness,
+                                 is_metal])
 
     # Set up the job script
     # TODO Allow scripts for various clusters

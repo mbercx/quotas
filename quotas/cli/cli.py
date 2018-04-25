@@ -284,10 +284,11 @@ def firetask():
                    "option. So it's not much of an option, really.")
 @click.option("--fix_thickness", "-b", default=8,
               help="Number of layers fixed as bulk in the geometry ")
-def workflow(slab_file, fix_part, fix_thickness):
+@click.option("--is_metal", "-m", is_flag=True)
+def workflow(slab_file, fix_part, fix_thickness, is_metal):
     """
     Test the workflow script
     """
     from quotas.workflow import dos_workflow
 
-    dos_workflow(slab_file, fix_part, fix_thickness)
+    dos_workflow(slab_file, fix_part, fix_thickness, is_metal)
