@@ -5,7 +5,9 @@ import os
 from fireworks import FireTaskBase, Firework, LaunchPad, ScriptTask, \
     TemplateWriterTask, PyTask, \
     FileTransferTask, FWorker, Workflow, FWAction
-from fireworks.core.rocket_launcher import launch_rocket, rapidfire
+from fireworks.core.rocket_launcher import launch_rocket
+from fireworks.queue.queue_launcher import launch_rocket_to_queue
+from fireworks.queue.queue_adapter import QueueAdapterBase
 from fw_tutorials.firetask.addition_task import AdditionTask
 
 """
@@ -52,6 +54,25 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
     launchpad = LaunchPad(host="ds135179.mlab.com", port=35179, name="quotas",
                           username="mbercx", password="quotastests")
 
+    # Set up the FireWorker
+    fireworker = FWorker(name="leibniz")
+
+    # Set up the queue adapter
+    queue_adapter = {"_fw_name": "TestAdapter",
+                     "_fw_q_type":"PBS",
+                     "rocket_launch":"source ~/local/envs/pymatgen.env; "
+                                     "rlaunch singleshot",
+                     "nnodes": "1",
+                     "ppnode": "28",
+                     "walltime": "00:02:00",
+                     "queue": "batch",
+                     "account": "null",
+                     "job_name": "null",
+                     "logdir": "/user/antwerpen/202/vsc20248",
+                     "pre_rocket": "null",
+                     "post_rocket": "null"
+    }
+
     ## FireWork 1
 
     # Set up the geometry optimization from the structure file
@@ -67,23 +88,27 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
     cd_relax = PyTask(func="os.chdir",
                       inputs=["relax_dir"])
 
-    # Set up the job script
-    # TODO Allow scripts for various clusters
-
-    job_script = TemplateWriterTask(
-        {"template_file":os.path.join(TEMPLATE_DIR, "job_leibniz.sh"),
-         "context":{"name":structure_file[:6] + "_rel", "nodes": 4},
-         "output_file":"job_leibniz.sh"}
-    )
+    # # Set up the job script
+    # # TODO Allow scripts for various clusters
+    #
+    # job_script = TemplateWriterTask(
+    #     {"template_file":os.path.join(TEMPLATE_DIR, "job_leibniz.sh"),
+    #      "context":{"name":structure_file[:6] + "_rel", "nodes": 4},
+    #      "output_file":"job_leibniz.sh"}
+    # )
 
     # Run the jobscript.
-    job_submission = ScriptTask.from_str("msub job_leibniz.sh")
+    job_submission = ScriptTask.from_str("export LD_BIND_NOW=1;"
+                                         "module load VASP/5.4.4-intel-2018a;"
+                                         "cd $PBS_O_WORKDIR;"
+                                         "mpirun -genv LD_BIND_NOW=1 vasp_std >> out 2>&1")
 
-    fw = Firework([setup_relax, cd_relax, job_script, job_submission])
+    fw = Firework([setup_relax, cd_relax, job_submission])
 
     # Launch the workflow
     launchpad.add_wf(fw)
-    launch_rocket(launchpad)
+    launch_rocket_to_queue(launchpad, fireworker,
+                           QueueAdapterBase.from_dict(queue_adapter))
 
     # -----> Here we would add a check to see if the job completed
     # successfully. If not, we can add another FireWork that makes the
