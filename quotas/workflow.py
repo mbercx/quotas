@@ -60,7 +60,12 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
                                  "fix_part":fix_part,
                                  "fix_thickness":fix_thickness,
                                  "is_metal":is_metal,
-                                 "verbose":False})
+                                 "verbose":False},
+                         outputs=["relax_dir"])
+
+    # Go to the directory for the geometry optimization
+    cd_relax = PyTask(func="os.chdir",
+                      inputs="relax_dir")
 
     # Set up the job script
     # TODO Allow scripts for various clusters
@@ -74,7 +79,10 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
     # Run the jobscript.
     job_submission = ScriptTask.from_str("msub job_leibniz.sh")
 
-    fw = Firework([setup_relax, job_script, job_submission])
+    fw = Firework([setup_relax, cd_relax, job_script, job_submission],
+                  {setup_relax: [cd_relax],
+                   cd_relax:[job_script],
+                   job_script: [job_submission]})
 
     # Launch the workflow
     launchpad.add_wf(fw)

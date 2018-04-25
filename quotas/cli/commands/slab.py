@@ -137,6 +137,19 @@ def setup(bulk_file, miller_indices, thickness, vacuum, write_cif, verbose):
 
 
 def relax(structure_file, fix_part, fix_thickness, is_metal, verbose):
+    """
+
+    Args:
+        structure_file:
+        fix_part:
+        fix_thickness:
+        is_metal:
+        verbose:
+
+    Returns:
+        relax_dir: Full path to the directory where the geometry
+        optimization was set up.
+    """
 
     if verbose:
         print("Reading structure from file...")
@@ -187,6 +200,9 @@ def relax(structure_file, fix_part, fix_thickness, is_metal, verbose):
 
     if verbose:
         print("Written input files to " + relax_dir)
+
+    # Return directory of geometry optimization for workflow purposes
+    return relax_dir
 
 
 def wf(relax_dir, k_product, hse_calc=False):
