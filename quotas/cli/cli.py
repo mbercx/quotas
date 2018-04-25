@@ -283,10 +283,10 @@ def firetask():
                    "Defaults to 'center', which is currently the only "
                    "option. So it's not much of an option, really.")
 @click.option("--fix_thickness", "-b", default=8,
-              help="Number of layers fixed as bulk in the geometry "
+              help="Number of layers fixed as bulk in the geometry ")
 def workflow(slab_file, fix_part, fix_thickness):
     """
-    Test the workflow scri
+    Test the workflow script
     """
     from quotas.workflow import dos_workflow
 
