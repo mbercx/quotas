@@ -108,7 +108,7 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
     # Launch the workflow
     launchpad.add_wf(fw)
     launch_rocket_to_queue(launchpad, fireworker,
-                           QueueAdapterBase.from_dict(queue_adapter))
+                           QueueAdapterBase(queue_adapter))
 
     # -----> Here we would add a check to see if the job completed
     # successfully. If not, we can add another FireWork that makes the
