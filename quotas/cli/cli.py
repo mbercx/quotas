@@ -278,11 +278,16 @@ def firetask():
 
 @test.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("slab_file", nargs=1)
-def workflow(slab_file):
+@click.option("--fix_part", "-f", default="center",
+              help="Part of the slab to fix in the geometry optimization. "
+                   "Defaults to 'center', which is currently the only "
+                   "option. So it's not much of an option, really.")
+@click.option("--fix_thickness", "-b", default=8,
+              help="Number of layers fixed as bulk in the geometry "
+def workflow(slab_file, fix_part, fix_thickness):
     """
-    Test the workflow script.
-
+    Test the workflow scri
     """
     from quotas.workflow import dos_workflow
 
-    dos_workflow(slab_file)
+    dos_workflow(slab_file, fix_part, fix_thickness)
