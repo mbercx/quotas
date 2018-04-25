@@ -79,10 +79,7 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
     # Run the jobscript.
     job_submission = ScriptTask.from_str("msub job_leibniz.sh")
 
-    fw = Firework([setup_relax, cd_relax, job_script, job_submission],
-                  {setup_relax: [cd_relax],
-                   cd_relax: [job_script],
-                   job_script: [job_submission]})
+    fw = Firework([setup_relax, cd_relax, job_script, job_submission])
 
     # Launch the workflow
     launchpad.add_wf(fw)
