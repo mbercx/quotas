@@ -51,6 +51,7 @@ def run_vasp(directory):
 
     """
 
+    os.chdir(directory)
     subprocess.call("/user/antwerpen/202/vsc20248/local/scripts/job_workflow"
                     ".sh")
 
