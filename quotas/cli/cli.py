@@ -284,8 +284,13 @@ def firetask():
                    "option. So it's not much of an option, really.")
 @click.option("--fix_thickness", "-b", default=8,
               help="Number of layers fixed as bulk in the geometry ")
-@click.option("--is_metal", "-m", is_flag=True)
-@click.option("--k_product", "-k", default=80)
+@click.option("--is_metal", "-m", is_flag=True,
+              help="Option that indicates that the material of the slab is "
+                   "metallic. This is used to change the smearing settings "
+                   "in the geometry optimization.")
+@click.option("--k_product", "-k", default=80,
+              help="Determines the density of the k-mesh in the density of "
+                   "states calculation.")
 def workflow(slab_file, fix_part, fix_thickness, is_metal, k_product):
     """
     Test the workflow script

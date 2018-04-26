@@ -82,7 +82,7 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
                                      "rlaunch singleshot",
                      "nnodes": "1",
                      "ppnode": "28",
-                     "walltime": "00:02:00",
+                     "walltime": "72:00:00",
                      "queue": "batch",
                      "job_name": "test",
                      "logdir": "/user/antwerpen/202/vsc20248",
@@ -106,7 +106,8 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
     run_relax = PyTask(func="quotas.workflow.run_vasp",
                        inputs=["relax_dir"])
 
-    relax_firework = Firework([setup_relax, run_relax])
+    relax_firework = Firework([setup_relax]) # TODO return run_relax after
+    # testing
 
     # -----> Here we would add a check to see if the job completed
     # successfully. If not, we can add another FireWork that makes the
@@ -116,17 +117,17 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
     # geometry (duh) and the magnetic moments, MORE?
 
     # Set up the calculation
-    setup_dos = Firework(
-        PyTask(func="quotas.cli.commands.slab.dos",
-               inputs=["relax_dir"],
-               kwargs={"k_product":k_product},
-               outputs=["dos_dir"]
-        )
-    )
+    setup_dos = PyTask(func="quotas.cli.commands.slab.dos",
+                       inputs=["relax_dir"],
+                       kwargs={"k_product":k_product},
+                       outputs=["dos_dir"])
+
 
     # Run the VASP calculation.
-    run_dos = Firework(PyTask(func="quotas.workflow.run_vasp",
-                              inputs=["dos_dir"]))
+    run_dos = PyTask(func="quotas.workflow.run_vasp",
+                     inputs=["dos_dir"])
+
+    dos_firework = Firework([setup_dos, run_dos])
 
     # ----> Here we would add a check...
 
@@ -138,9 +139,8 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
 
 
     # Launch the workflow
-    workflow = Workflow([relax_firework, setup_dos, run_dos],
-                        {relax_firework: [setup_dos],
-                         setup_dos: [run_dos]})
+    workflow = Workflow([relax_firework, dos_firework],
+                        {relax_firework: [dos_firework]})
     launchpad.add_wf(workflow)
 
 # Some tutorial-based tests:
