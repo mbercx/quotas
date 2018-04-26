@@ -91,12 +91,9 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
                               {"_launch_dir":"relax_dir"})
 
     # Launch the workflow
-    launchpad.add_wf([setup_relax, job_submission],
-                     {setup_relax: [job_submission]})
-
-    rapidfire(launchpad, fireworker, queue_adapter)
-
-    # launch_rocket_to_queue(launchpad, fireworker, queue_adapter)
+    workflow = Workflow([setup_relax, job_submission],
+                        {setup_relax: [job_submission]})
+    launchpad.add_wf(workflow)
 
     # -----> Here we would add a check to see if the job completed
     # successfully. If not, we can add another FireWork that makes the
