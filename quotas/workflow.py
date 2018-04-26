@@ -45,9 +45,10 @@ def run_vasp(directory):
     run VASP in the appropriate directory.
 
     Args:
-        directory:
+        directory: Absolute path to the directory in which VASP should be run
 
     Returns:
+        None
 
     """
 
@@ -56,7 +57,7 @@ def run_vasp(directory):
                     ".sh")
 
 
-def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
+def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
     """
     Finally time for the real deal. I want to calculate the DOS and
     workfunction based on a structure file.
@@ -88,40 +89,44 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
     }
     queue_adapter = CommonAdapter.from_dict(queue_adapter)
 
-    ## FireWork 1
-
-    # Set up the geometry optimization from the structure file
-    setup_relax = Firework(
-        PyTask(func="quotas.cli.commands.slab.relax",
-               kwargs={"structure_file":structure_file,
-                       "fix_part":fix_part,
+    # Set up the geometry optimization from the structure file. All input is
+    # provided by the CLI arguments and options. The directory where the
+    # geometry optimization is set up is returned and passed as output,
+    # so it can be used by Firework children to run the calculation.
+    setup_relax = PyTask(func="quotas.cli.commands.slab.relax",
+                         kwargs={"structure_file":structure_file,
                                  "fix_thickness":fix_thickness,
                                  "is_metal":is_metal,
                                  "verbose":False},
-                         outputs=["relax_dir"]))
+                         outputs=["relax_dir"]
+                         )
+
 
     # Run the VASP calculation.
-    job_submission = Firework(PyTask(func="quotas.workflow.run_vasp",
-                                     inputs=["relax_dir"]))
+    run_relax = PyTask(func="quotas.workflow.run_vasp",
+                       inputs=["relax_dir"])
 
-    # Launch the workflow
-    workflow = Workflow([setup_relax, job_submission],
-                        {setup_relax: [job_submission]})
-    launchpad.add_wf(workflow)
+    relax_firework = Firework([setup_relax, run_relax])
 
     # -----> Here we would add a check to see if the job completed
     # successfully. If not, we can add another FireWork that makes the
     # necessary adjustments and restarts the calculation.
 
-    ## Firework 2
-
     # Extract the necessary output from the geometry optimization, such as
     # geometry (duh) and the magnetic moments, MORE?
-    # Create a custom FireTask from the corresponding quotas cli method?
 
-    # Set up the job script
+    # Set up the calculation
+    setup_dos = Firework(
+        PyTask(func="quotas.cli.commands.slab.dos",
+               inputs=["relax_dir"],
+               kwargs={"k_product":k_product},
+               outputs=["dos_dir"]
+        )
+    )
 
-    # Run the job script
+    # Run the VASP calculation.
+    run_dos = Firework(PyTask(func="quotas.workflow.run_vasp",
+                              inputs=["dos_dir"]))
 
     # ----> Here we would add a check...
 
@@ -131,6 +136,12 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
 
     # Calculate the work function
 
+
+    # Launch the workflow
+    workflow = Workflow([relax_firework, setup_dos, run_dos],
+                        {relax_firework: [setup_dos],
+                         setup_dos: [run_dos]})
+    launchpad.add_wf(workflow)
 
 # Some tutorial-based tests:
 
