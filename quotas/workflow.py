@@ -1,6 +1,7 @@
 # Encoding: UTF-8
 
 import os
+import subprocess
 
 from fireworks import FireTaskBase, Firework, LaunchPad, ScriptTask, \
     TemplateWriterTask, PyTask, \
@@ -36,6 +37,22 @@ class slabRelaxTask(FireTaskBase):
         relax(structure_file, fix_part, fix_thickness, is_metal)
 
         return FWAction()
+
+def run_vasp(directory):
+    """
+    Method that simply runs VASP in the directory that is specified. Mainly
+    used to set up a PyTask that uses information from previous FireWorks to
+    run VASP in the appropriate directory.
+
+    Args:
+        directory:
+
+    Returns:
+
+    """
+
+    subprocess.call("/user/antwerpen/202/vsc20248/local/scripts/job_workflow"
+                    ".sh")
 
 
 def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
@@ -83,12 +100,8 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
                          outputs=["relax_dir"]))
 
     # Run the VASP calculation.
-    job_submission = Firework(ScriptTask.from_str("export LD_BIND_NOW=1;"
-                                         "module load VASP/5.4.4-intel-2018a;"
-                                         "cd $PBS_O_WORKDIR;"
-                                         "mpirun -genv LD_BIND_NOW=1 "
-                                                  "vasp_std >> out 2>&1"),
-                              {"_launch_dir":"relax_dir"})
+    job_submission = Firework(PyTask(func="quotas.workflow.run_vasp",
+                                     inputs=["relax_dir"]))
 
     # Launch the workflow
     workflow = Workflow([setup_relax, job_submission],

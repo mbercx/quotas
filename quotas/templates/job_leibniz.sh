@@ -1,11 +1,3 @@
-#!/bin/bash
-#PBS -N {{name}}
-#PBS -q batch
-#PBS -L tasks={{nodes}}:lprocs=28
-##PBS -l pmem=3GB
-#PBS -l walltime=72:00:00
-#PBS -j eo
-
 export LD_BIND_NOW=1
 
 module load VASP/5.4.4-intel-2018a
