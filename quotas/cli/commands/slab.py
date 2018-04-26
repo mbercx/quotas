@@ -203,8 +203,6 @@ def relax(structure_file, fix_part, fix_thickness, is_metal, verbose):
     if verbose:
         print("Written input files to " + relax_dir)
 
-    pdb.set_trace()
-
     # Return directory of geometry optimization for workflow purposes
     return relax_dir
 
