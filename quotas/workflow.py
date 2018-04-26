@@ -6,7 +6,7 @@ from fireworks import FireTaskBase, Firework, LaunchPad, ScriptTask, \
     TemplateWriterTask, PyTask, \
     FileTransferTask, FWorker, Workflow, FWAction
 from fireworks.core.rocket_launcher import launch_rocket
-from fireworks.queue.queue_launcher import launch_rocket_to_queue
+from fireworks.queue.queue_launcher import launch_rocket_to_queue, rapidfire
 from fireworks.user_objects.queue_adapters.common_adapter import CommonAdapter
 from fw_tutorials.firetask.addition_task import AdditionTask
 
@@ -73,37 +73,29 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
     ## FireWork 1
 
     # Set up the geometry optimization from the structure file
-    setup_relax = PyTask(func="quotas.cli.commands.slab.relax",
-                         kwargs={"structure_file":structure_file,
-                                 "fix_part":fix_part,
+    setup_relax = Firework(
+        PyTask(func="quotas.cli.commands.slab.relax",
+               kwargs={"structure_file":structure_file,
+                       "fix_part":fix_part,
                                  "fix_thickness":fix_thickness,
                                  "is_metal":is_metal,
                                  "verbose":False},
-                         outputs=["relax_dir"])
+                         outputs=["relax_dir"]))
 
-    # Go to the directory for the geometry optimization
-    cd_relax = PyTask(func="os.chdir",
-                      inputs=["relax_dir"])
-
-    # # Set up the job script
-    # # TODO Allow scripts for various clusters
-    #
-    # job_script = TemplateWriterTask(
-    #     {"template_file":os.path.join(TEMPLATE_DIR, "job_leibniz.sh"),
-    #      "context":{"name":structure_file[:6] + "_rel", "nodes": 4},
-    #      "output_file":"job_leibniz.sh"}
-    # )
-
-    # Run the jobscript.
-    job_submission = ScriptTask.from_str("export LD_BIND_NOW=1;"
+    # Run the VASP calculation.
+    job_submission = Firework(ScriptTask.from_str("export LD_BIND_NOW=1;"
                                          "module load VASP/5.4.4-intel-2018a;"
                                          "cd $PBS_O_WORKDIR;"
-                                         "mpirun -genv LD_BIND_NOW=1 vasp_std >> out 2>&1")
-
-    fw = Firework([setup_relax, cd_relax, job_submission])
+                                         "mpirun -genv LD_BIND_NOW=1 "
+                                                  "vasp_std >> out 2>&1"),
+                              {"_launch_dir":"relax_dir"})
 
     # Launch the workflow
-    launchpad.add_wf(fw)
+    launchpad.add_wf([setup_relax, job_submission],
+                     {setup_relax: [job_submission]})
+
+    rapidfire(launchpad, fireworker, queue_adapter)
+
     # launch_rocket_to_queue(launchpad, fireworker, queue_adapter)
 
     # -----> Here we would add a check to see if the job completed
