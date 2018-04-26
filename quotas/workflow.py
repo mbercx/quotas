@@ -65,11 +65,8 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
                      "ppnode": "28",
                      "walltime": "00:02:00",
                      "queue": "batch",
-                     "account": "null",
-                     "job_name": "null",
+                     "job_name": "test",
                      "logdir": "/user/antwerpen/202/vsc20248",
-                     "pre_rocket": "null",
-                     "post_rocket": "null"
     }
     queue_adapter = CommonAdapter.from_dict(queue_adapter)
 
@@ -107,7 +104,7 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal):
 
     # Launch the workflow
     launchpad.add_wf(fw)
-    launch_rocket_to_queue(launchpad, fireworker, queue_adapter)
+    # launch_rocket_to_queue(launchpad, fireworker, queue_adapter)
 
     # -----> Here we would add a check to see if the job completed
     # successfully. If not, we can add another FireWork that makes the
