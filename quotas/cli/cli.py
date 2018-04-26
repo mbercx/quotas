@@ -290,7 +290,9 @@ def firetask():
                    "in the geometry optimization.")
 @click.option("--k_product", "-k", default=80,
               help="Determines the density of the k-mesh in the density of "
-                   "states calculation.")
+                   "states calculation. k_product represents the product of "
+                   "the number of k-points corresponding to a certain "
+                   "lattice vector with the length of that lattice vector.")
 def workflow(slab_file, fix_part, fix_thickness, is_metal, k_product):
     """
     Test the workflow script

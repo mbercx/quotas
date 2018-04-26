@@ -106,15 +106,13 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
     run_relax = PyTask(func="quotas.workflow.run_vasp",
                        inputs=["relax_dir"])
 
-    relax_firework = Firework([setup_relax]) # TODO return run_relax after
-    # testing
+    relax_firework = Firework(tasks=[setup_relax, run_relax],
+                              name="Slab Geometry optimization")
 
     # -----> Here we would add a check to see if the job completed
     # successfully. If not, we can add another FireWork that makes the
     # necessary adjustments and restarts the calculation.
 
-    # Extract the necessary output from the geometry optimization, such as
-    # geometry (duh) and the magnetic moments, MORE?
 
     # Set up the calculation
     setup_dos = PyTask(func="quotas.cli.commands.slab.dos",
@@ -127,7 +125,8 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
     run_dos = PyTask(func="quotas.workflow.run_vasp",
                      inputs=["dos_dir"])
 
-    dos_firework = Firework([setup_dos, run_dos])
+    dos_firework = Firework(tasks=[setup_dos, run_dos],
+                            name="DOS calculation")
 
     # ----> Here we would add a check...
 
@@ -137,10 +136,11 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
 
     # Calculate the work function
 
-
     # Launch the workflow
-    workflow = Workflow([relax_firework, dos_firework],
-                        {relax_firework: [dos_firework]})
+    workflow = Workflow(fireworks=[relax_firework, dos_firework],
+                        links_dict={relax_firework: [dos_firework]},
+                        name=structure_file + " DOS calculation")
+
     launchpad.add_wf(workflow)
 
 # Some tutorial-based tests:
