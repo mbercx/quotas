@@ -95,12 +95,12 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
     # so it can be used by Firework children to run the calculation.
     setup_relax = PyTask(func="quotas.cli.commands.slab.relax",
                          kwargs={"structure_file":structure_file,
+                                 "fix_part":fix_part,
                                  "fix_thickness":fix_thickness,
                                  "is_metal":is_metal,
                                  "verbose":False},
                          outputs=["relax_dir"]
                          )
-
 
     # Run the VASP calculation.
     run_relax = PyTask(func="quotas.workflow.run_vasp",
