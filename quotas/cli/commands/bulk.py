@@ -94,6 +94,7 @@ def relax(structure_file, is_metal=False, hse_calc=False, verbose=False):
     # purposes
     return os.path.abspath(calculation_dir)
 
+
 def dos(relax_dir, k_product, hse_calc=False):
     """
     Set up the work function calculation based on the output of the geometry
