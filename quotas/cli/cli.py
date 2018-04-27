@@ -119,7 +119,7 @@ def relax(bulk_file, is_metal, hse_calc, verbose):
     """
     from quotas.cli.commands.bulk import relax
 
-    relax(bulk_file=bulk_file,
+    relax(structure_file=bulk_file,
           is_metal=is_metal,
           hse_calc=hse_calc,
           verbose=verbose)

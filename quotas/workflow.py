@@ -217,6 +217,7 @@ def bulk_optics_workflow(structure_file, is_metal, hse_calc, k_product):
     optics_firework = Firework(tasks=[setup_optics, run_optics],
                                name="Optics calculation")
 
+
     # Add the workflow to the launchpad
     workflow = Workflow(fireworks=[relax_firework, optics_firework],
                         links_dict={relax_firework: [optics_firework]},

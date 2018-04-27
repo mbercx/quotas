@@ -137,7 +137,8 @@ def setup(bulk_file, miller_indices, thickness, vacuum, write_cif, verbose):
             slab_structure.to(fmt="cif", filename=slab_file + ".cif")
 
 
-def relax(structure_file, fix_part, fix_thickness, is_metal, verbose):
+def relax(structure_file, fix_part, fix_thickness, is_metal=False,
+          verbose=False):
     """
 
     Args:
@@ -192,20 +193,20 @@ def relax(structure_file, fix_part, fix_thickness, is_metal, verbose):
     # TODO Naming is difficult because of the lack of a jsonable Slab class.
     # Fix this after fixing that problem.
 
-    relax_dir = os.path.join(
+    calculation_dir = os.path.join(
         current_dir, structure_file.strip(
             slab_structure.composition.reduced_formula + "_"
         ).strip(".json"), fix_part + "_" + "relax")
 
     # Write the input files to the calculation directory
-    geo_optimization.write_input(relax_dir)
+    geo_optimization.write_input(calculation_dir)
 
     if verbose:
-        print("Written input files to " + relax_dir)
+        print("Written input files to " + calculation_dir)
 
     # Return absolute path to directory of geometry optimization for workflow
     # purposes
-    return relax_dir
+    return calculation_dir
 
 
 def wf(relax_dir, k_product, hse_calc=False):

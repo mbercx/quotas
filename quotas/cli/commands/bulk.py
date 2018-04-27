@@ -21,13 +21,13 @@ def _load_yaml_config(filename):
     return config
 
 
-def relax(bulk_file, is_metal=False, hse_calc=False, verbose=False):
+def relax(structure_file, is_metal=False, hse_calc=False, verbose=False):
 
     if verbose:
         print("Reading structure from file...")
 
     # Read the bulk structure
-    bulk_structure = Structure.from_file(bulk_file)
+    bulk_structure = Structure.from_file(structure_file)
 
     # If no magnetic configuration is given, start the calculation in a
     # non-magnetic state.
@@ -79,6 +79,9 @@ def relax(bulk_file, is_metal=False, hse_calc=False, verbose=False):
     if verbose:
         print("Written input to " + calculation_dir)
 
+    # Return absolute path to directory of geometry optimization for workflow
+    # purposes
+    return calculation_dir
 
 def dos(relax_dir, k_product, hse_calc=False):
     """
@@ -189,3 +192,5 @@ def optics(relax_dir, k_product, hse_calc, is_metal, verbose):
     if verbose:
         print("Written input to " + calculation_dir)
 
+    # Return the calculation director for workflow purposes
+    return calculation_dir
