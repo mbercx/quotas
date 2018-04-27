@@ -246,7 +246,7 @@ def test():
     pass
 
 @test.command(context_settings=CONTEXT_SETTINGS)
-@click.argument("slab_file", nargs=1)
+@click.argument("structure_file", nargs=1)
 @click.option("--fix_part", "-f", default="center",
               help="Part of the slab to fix in the geometry optimization. "
                    "Defaults to 'center', which is currently the only "
@@ -262,10 +262,34 @@ def test():
                    "states calculation. k_product represents the product of "
                    "the number of k-points corresponding to a certain "
                    "lattice vector with the length of that lattice vector.")
-def workflow(slab_file, fix_part, fix_thickness, is_metal, k_product):
+def dos(structure_file, fix_part, fix_thickness, is_metal, k_product):
     """
-    Test the workflow script
+    Test the DOS workflow script
     """
     from quotas.workflow import dos_workflow
 
-    dos_workflow(slab_file, fix_part, fix_thickness, is_metal, k_product)
+    dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product)
+
+
+
+@test.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("structure_file", nargs=1)
+@click.option("--is_metal", "-m", is_flag=True,
+              help="Option that indicates that the material of the slab is "
+                   "metallic. This is used to change the smearing settings "
+                   "in the geometry optimization.")
+@click.option("--hse_calc", "-H", is_flag=True,
+              help="Sets the exchange-correlation functional of the "
+                   "calculation to HSE06.")
+@click.option("--k_product", "-k", default=80,
+              help="Determines the density of the k-mesh in the density of "
+                   "states calculation. k_product represents the product of "
+                   "the number of k-points corresponding to a certain "
+                   "lattice vector with the length of that lattice vector.")
+def optics(structure_file, is_metal, hse_calc, k_product):
+    """
+    Test the optics workflow script
+    """
+    from quotas.workflow import bulk_optics_workflow
+
+    bulk_optics_workflow(structure_file, is_metal, hse_calc, k_product)

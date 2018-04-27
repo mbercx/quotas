@@ -188,3 +188,4 @@ def optics(relax_dir, k_product, hse_calc, is_metal, verbose):
 
     if verbose:
         print("Written input to " + calculation_dir)
+

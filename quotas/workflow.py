@@ -29,17 +29,18 @@ LAUNCHPAD = LaunchPad(host="ds135179.mlab.com", port=35179, name="quotas",
 FIREWORKER = FWorker(name="leibniz")
 
 # Set up the queue adapter
-QUEUE_ADAPTER = {"_fw_q_type":"PBS",
-                 "rocket_launch":"source ~/local/envs/pymatgen.env; "
-                                 "rlaunch singleshot",
-                 "nnodes": "1",
-                 "ppnode": "28",
-                 "walltime": "72:00:00",
-                 "queue": "batch",
-                 "job_name": "test",
-                 "logdir": "/user/antwerpen/202/vsc20248",
-}
-queue_adapter = CommonAdapter.from_dict(queue_adapter)
+QUEUE_ADAPTER = CommonAdapter.from_dict(
+    {"_fw_q_type": "PBS",
+     "rocket_launch": "source ~/local/envs/pymatgen.env; "
+                      "rlaunch singleshot",
+     "nnodes": "1",
+     "ppnode": "28",
+     "walltime": "72:00:00",
+     "queue": "batch",
+     "job_name": "test",
+     "logdir": "/user/antwerpen/202/vsc20248", }
+)
+
 
 class slabRelaxTask(FireTaskBase):
     """
@@ -59,6 +60,7 @@ class slabRelaxTask(FireTaskBase):
         relax(structure_file, fix_part, fix_thickness, is_metal)
 
         return FWAction()
+
 
 def run_vasp(directory):
     """
@@ -119,11 +121,11 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
     # geometry optimization is set up is returned and passed as output,
     # so it can be used by Firework children to run the calculation.
     setup_relax = PyTask(func="quotas.cli.commands.slab.relax",
-                         kwargs={"structure_file":structure_file,
-                                 "fix_part":fix_part,
-                                 "fix_thickness":fix_thickness,
-                                 "is_metal":is_metal,
-                                 "verbose":False},
+                         kwargs={"structure_file": structure_file,
+                                 "fix_part": fix_part,
+                                 "fix_thickness": fix_thickness,
+                                 "is_metal": is_metal,
+                                 "verbose": False},
                          outputs=["relax_dir"]
                          )
 
@@ -133,7 +135,7 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
 
     relax_firework = Firework(tasks=[setup_relax, run_relax],
                               name="Slab Geometry optimization",
-                              spec={"_launch_dir":current_dir})
+                              spec={"_launch_dir": current_dir})
 
     # -----> Here we would add a check to see if the job completed
     # successfully. If not, we can add another FireWork that makes the
@@ -142,9 +144,8 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
     # Set up the calculation
     setup_dos = PyTask(func="quotas.cli.commands.slab.dos",
                        inputs=["relax_dir"],
-                       kwargs={"k_product":k_product},
+                       kwargs={"k_product": k_product},
                        outputs=["dos_dir"])
-
 
     # Run the VASP calculation.
     run_dos = PyTask(func="quotas.workflow.run_vasp",
@@ -161,17 +162,64 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
 
     # Calculate the work function
 
-    # Launch the workflow
+    # Add the workflow to the launchpad
     workflow = Workflow(fireworks=[relax_firework, dos_firework],
                         links_dict={relax_firework: [dos_firework]},
                         name=structure_file + " DOS calculation")
 
     LAUNCHPAD.add_wf(workflow)
 
-def bulk_diel_workflow():
+
+def bulk_optics_workflow(structure_file, is_metal, hse_calc, k_product):
     """
+    Sets up a workflow that calculates the dielectric function for the bulk
+    structure of a material.
 
     Returns:
 
     """
-    pass
+
+    current_dir = os.getcwd()
+
+    # Set up the geometry optimization from the structure file. All input is
+    # provided by the CLI arguments and options. The directory where the
+    # geometry optimization is set up is returned and passed as output,
+    # so it can be used by Firework children to run the calculation.
+    setup_relax = PyTask(func="quotas.cli.commands.bulk.relax",
+                         kwargs={"structure_file": structure_file,
+                                 "is_metal": is_metal,
+                                 "hse_calc": hse_calc,
+                                 "verbose": False},
+                         outputs=["relax_dir"]
+                         )
+
+    # Run VASP
+    run_relax = PyTask(func="quotas.workflow.run_vasp",
+                       inputs=["relax_dir"])
+
+    relax_firework = Firework(tasks=[setup_relax, run_relax],
+                              name="Bulk Geometry optimization",
+                              spec={"_launch_dir": current_dir})
+
+    # Set up the dielectric function calculation
+    setup_optics = PyTask(func="quotas.cli.commands.bulk.optics",
+                          inputs=["relax_dir"],
+                          kwargs={"k_product": k_product,
+                                  "is_metal": is_metal,
+                                  "hse_calc": hse_calc,
+                                  "verbose": False},
+                          outputs=["optics_dir"])
+
+    # Run VASP
+    run_optics = PyTask(func="quotas.workflow.run_vasp",
+                        inputs=["optics_dir"])
+
+    optics_firework = Firework(tasks=[setup_optics, run_optics],
+                               name="Optics calculation")
+
+    # Add the workflow to the launchpad
+    workflow = Workflow(fireworks=[relax_firework, optics_firework],
+                        links_dict={relax_firework: [optics_firework]},
+                        name=structure_file + " Optics calculation")
+
+    LAUNCHPAD.add_wf(workflow)
