@@ -1,4 +1,6 @@
 # Encoding: UTF-8
+# Copyright (c) Marnik Bercx, University of Antwerp
+# Distributed under the terms of the MIT License
 
 import os
 import subprocess
@@ -11,6 +13,13 @@ from fireworks.user_objects.queue_adapters.common_adapter import CommonAdapter
 Workflow setup for the quotas calculations.
 
 """
+
+__author__ = "Marnik Bercx"
+__copyright__ = "Copyright 2018, Marnik Bercx, University of Antwerp"
+__version__ = "0.2"
+__maintainer__ = "Marnik Bercx"
+__email__ = "marnik.bercx@uantwerpen.be"
+__date__ = "Apr 2018"
 
 # Directory with templates for the Template
 TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),

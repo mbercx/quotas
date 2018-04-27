@@ -1,4 +1,6 @@
 # Encoding: UTF-8
+# Copyright (c) Marnik Bercx, University of Antwerp
+# Distributed under the terms of the MIT License
 
 from pymatgen.core.surface import SlabGenerator
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
@@ -9,6 +11,14 @@ import string
 A set of methods to aid in the setup of slab calculations. 
 
 """
+
+__author__ = "Marnik Bercx"
+__copyright__ = "Copyright 2018, Marnik Bercx, University of Antwerp"
+__version__ = "0.2"
+__maintainer__ = "Marnik Bercx"
+__email__ = "marnik.bercx@uantwerpen.be"
+__date__ = "Apr 2018"
+
 
 def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
     """

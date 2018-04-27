@@ -1,3 +1,6 @@
+# Encoding: UTF-8
+# Copyright (c) Marnik Bercx, University of Antwerp
+# Distributed under the terms of the MIT License
 
 import os
 import matplotlib.pyplot as plt
@@ -9,6 +12,13 @@ from pymatgen.io.vasp.outputs import Locpot, Vasprun
 Module that defines the analysis tools for the quotas package.
 
 """
+
+__author__ = "Marnik Bercx"
+__copyright__ = "Copyright 2018, Marnik Bercx, University of Antwerp"
+__version__ = "0.2"
+__maintainer__ = "Marnik Bercx"
+__email__ = "marnik.bercx@uantwerpen.be"
+__date__ = "Apr 2018"
 
 
 def wf(directory, plot_potential=False):

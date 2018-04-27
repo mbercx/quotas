@@ -1,4 +1,6 @@
 # Encoding: UTF-8
+# Copyright (c) Marnik Bercx, University of Antwerp
+# Distributed under the terms of the MIT License
 
 import click
 
@@ -7,7 +9,14 @@ Command line interface for the quotas package.
 
 """
 
-# This is used to make '-h' a shorter way to access the CLI help
+__author__ = "Marnik Bercx"
+__copyright__ = "Copyright 2018, Marnik Bercx, University of Antwerp"
+__version__ = "0.2"
+__maintainer__ = "Marnik Bercx"
+__email__ = "marnik.bercx@uantwerpen.be"
+__date__ = "Apr 2018"
+
+# This is used to make '-h' a shorter option to access the CLI help
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 

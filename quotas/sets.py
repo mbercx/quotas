@@ -1,4 +1,6 @@
 # Encoding: UTF-8
+# Copyright (c) Marnik Bercx, University of Antwerp
+# Distributed under the terms of the MIT License
 
 import os
 import quotas.core as slab
@@ -13,6 +15,14 @@ from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar
 Module that defines the various calculations required for the quotas script.
 
 """
+
+__author__ = "Marnik Bercx"
+__copyright__ = "Copyright 2018, Marnik Bercx, University of Antwerp"
+__version__ = "0.2"
+__maintainer__ = "Marnik Bercx"
+__email__ = "marnik.bercx@uantwerpen.be"
+__date__ = "Apr 2018"
+
 
 MODULE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                           "set_configs")
