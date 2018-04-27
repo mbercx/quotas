@@ -88,7 +88,7 @@ def relax(structure_file, is_metal=False, hse_calc=False, verbose=False):
     geo_optimization.write_input(calculation_dir)
 
     if verbose:
-        print("Written input to " + calculation_dir)
+        print("Written input to " + os.path.abspath(calculation_dir))
 
     # Return absolute path to directory of geometry optimization for workflow
     # purposes
