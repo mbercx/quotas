@@ -16,8 +16,30 @@ Workflow setup for the quotas calculations.
 
 """
 
+# Directory with templates for the Template
 TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                             "templates")
+VASP_RUN_SCRIPT = "/user/antwerpen/202/vsc20248/local/scripts/job_workflow.sh"
+
+# Set up the Launchpad for the workflows
+LAUNCHPAD = LaunchPad(host="ds135179.mlab.com", port=35179, name="quotas",
+                      username="mbercx", password="quotastests")
+
+# Set up the FireWorker
+FIREWORKER = FWorker(name="leibniz")
+
+# Set up the queue adapter
+QUEUE_ADAPTER = {"_fw_q_type":"PBS",
+                 "rocket_launch":"source ~/local/envs/pymatgen.env; "
+                                 "rlaunch singleshot",
+                 "nnodes": "1",
+                 "ppnode": "28",
+                 "walltime": "72:00:00",
+                 "queue": "batch",
+                 "job_name": "test",
+                 "logdir": "/user/antwerpen/202/vsc20248",
+}
+queue_adapter = CommonAdapter.from_dict(queue_adapter)
 
 class slabRelaxTask(FireTaskBase):
     """
@@ -41,11 +63,11 @@ class slabRelaxTask(FireTaskBase):
 def run_vasp(directory):
     """
     Method that simply runs VASP in the directory that is specified. Mainly
-    used to set up a PyTask that uses information from previous FireWorks to
-    run VASP in the appropriate directory.
+    used to set up a PyTask that uses outputs from PyTasks in previous
+    FireWorks to run VASP in the appropriate directory.
 
     Args:
-        directory: Absolute path to the directory in which VASP should be run
+        directory: Absolute path to the directory in which VASP should be run.
 
     Returns:
         None
@@ -53,8 +75,7 @@ def run_vasp(directory):
     """
 
     os.chdir(directory)
-    subprocess.call("/user/antwerpen/202/vsc20248/local/scripts/job_workflow"
-                    ".sh")
+    subprocess.call(VASP_RUN_SCRIPT)
 
 
 def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
@@ -69,6 +90,8 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
 
     "DOS Calculation": Calculates the density of states of the slab, as well as
     the local potential, which can be used to determine the vacuum level.
+
+    After it is set up, the workflow is sent to the LAUNCHPAD.
 
     Args:
         structure_file (str): Name of the structure file which contains the
@@ -88,26 +111,6 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
         None
 
     """
-
-    # Set up the Launchpad for the workflow
-    launchpad = LaunchPad(host="ds135179.mlab.com", port=35179, name="quotas",
-                          username="mbercx", password="quotastests")
-
-    # Set up the FireWorker
-    fireworker = FWorker(name="leibniz")
-
-    # Set up the queue adapter
-    queue_adapter = {"_fw_q_type":"PBS",
-                     "rocket_launch":"source ~/local/envs/pymatgen.env; "
-                                     "rlaunch singleshot",
-                     "nnodes": "1",
-                     "ppnode": "28",
-                     "walltime": "72:00:00",
-                     "queue": "batch",
-                     "job_name": "test",
-                     "logdir": "/user/antwerpen/202/vsc20248",
-    }
-    queue_adapter = CommonAdapter.from_dict(queue_adapter)
 
     current_dir = os.getcwd()
 
@@ -163,5 +166,12 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
                         links_dict={relax_firework: [dos_firework]},
                         name=structure_file + " DOS calculation")
 
-    launchpad.add_wf(workflow)
+    LAUNCHPAD.add_wf(workflow)
 
+def bulk_diel_workflow():
+    """
+
+    Returns:
+
+    """
+    pass

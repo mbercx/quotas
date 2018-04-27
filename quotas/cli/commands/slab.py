@@ -1,7 +1,6 @@
 # Encoding: UTF-8
 
 import os
-import subprocess
 import string
 
 import pdb
