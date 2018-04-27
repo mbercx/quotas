@@ -66,8 +66,6 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
     Returns:
 
     """
-    ## Various steps lined up. These should all be FireTasks within FireWorks
-
 
     # Set up the Launchpad for the workflow
     launchpad = LaunchPad(host="ds135179.mlab.com", port=35179, name="quotas",
@@ -89,6 +87,9 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
     }
     queue_adapter = CommonAdapter.from_dict(queue_adapter)
 
+
+    current_dir = os.getcwd()
+
     # Set up the geometry optimization from the structure file. All input is
     # provided by the CLI arguments and options. The directory where the
     # geometry optimization is set up is returned and passed as output,
@@ -107,12 +108,12 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
                        inputs=["relax_dir"])
 
     relax_firework = Firework(tasks=[setup_relax, run_relax],
-                              name="Slab Geometry optimization")
+                              name="Slab Geometry optimization",
+                              spec={"_launch_dir":current_dir})
 
     # -----> Here we would add a check to see if the job completed
     # successfully. If not, we can add another FireWork that makes the
     # necessary adjustments and restarts the calculation.
-
 
     # Set up the calculation
     setup_dos = PyTask(func="quotas.cli.commands.slab.dos",
