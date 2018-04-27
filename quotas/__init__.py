@@ -22,12 +22,11 @@ SETTINGS_FILE = os.path.join(os.path.expanduser("~"), ".quotas_config.yaml")
 
 
 def _load_pmg_settings():
-
-    with open(SETTINGS_FILE, "rt") as f:
-        try:
+    try:
+        with open(SETTINGS_FILE, "rt") as f:
             d = yaml.safe_load(f)
-        except FileNotFoundError:
-            d = {}
+    except FileNotFoundError:
+        d = {}
 
     return d
 
