@@ -28,7 +28,7 @@ VASP_RUN_SCRIPT = "/user/antwerpen/202/vsc20248/local/scripts/job_workflow.sh"
 
 # Set up the Launchpad for the workflows
 LAUNCHPAD = LaunchPad(host="ds135179.mlab.com", port=35179, name="quotas",
-                      username="mbercx", password="quotastests")
+                      username="mbercx")
 
 # Set up the FireWorker
 FIREWORKER = FWorker(name="leibniz")
