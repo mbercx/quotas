@@ -245,37 +245,6 @@ def test():
     """
     pass
 
-
-@test.command(context_settings=CONTEXT_SETTINGS)
-def launch():
-    """
-    Test the launch script.
-    """
-    from quotas.workflow import launch_test
-
-    launch_test()
-
-
-@test.command(context_settings=CONTEXT_SETTINGS)
-def firework():
-    """
-    Test the firework script.
-
-    """
-    from quotas.workflow import firework_test
-
-    firework_test()
-
-@test.command(context_settings=CONTEXT_SETTINGS)
-def firetask():
-    """
-    Test the firetask script.
-
-    """
-    from quotas.workflow import firetask_test
-
-    firetask_test()
-
 @test.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("slab_file", nargs=1)
 @click.option("--fix_part", "-f", default="center",

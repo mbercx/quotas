@@ -59,11 +59,33 @@ def run_vasp(directory):
 
 def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
     """
-    Finally time for the real deal. I want to calculate the DOS and
-    workfunction based on a structure file.
+    Set up a workflow to calculate the DOS of a slab file. Will set up two
+    FireWorks:
 
+    "Slab Geometry Optimization": Optimizes the geometry of the slab given
+    by the structure file. The user can also specify the part of the slab
+    that is fixed using selective dynamics, as well as the number of layers
+    to fix.
+
+    "DOS Calculation": Calculates the density of states of the slab, as well as
+    the local potential, which can be used to determine the vacuum level.
+
+    Args:
+        structure_file (str): Name of the structure file which contains the
+        slab geometry.
+        fix_part (str): Defines the part of the slab that will remain fixed
+        during the geometry optimization.
+        fix_thickness (int): Number of atomic layers to fix for the geometry
+        optimization.
+        is_metal (bool): Specifies whether or not the material is metallic.
+        Sets the smearing method to Methfessel-Paxton.
+        k_product (int): Determines the density of the k-mesh in the density of
+        states calculation. k_product represents the product of the number
+        of k-points corresponding to a certain lattice vector with the
+        length of that lattice vector.
 
     Returns:
+        None
 
     """
 
@@ -86,7 +108,6 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
                      "logdir": "/user/antwerpen/202/vsc20248",
     }
     queue_adapter = CommonAdapter.from_dict(queue_adapter)
-
 
     current_dir = os.getcwd()
 
@@ -129,7 +150,7 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
     dos_firework = Firework(tasks=[setup_dos, run_dos],
                             name="DOS calculation")
 
-    # ----> Here we would add a check...
+    # ----> Here we would add another check...
 
     ## Firework 3
 
@@ -144,100 +165,3 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
 
     launchpad.add_wf(workflow)
 
-# Some tutorial-based tests:
-
-def launch_test():
-    """
-    Small script that simply tests launching rockets using fireworks.
-    """
-
-    # Set up the launchpad, i.e. the connection with the mongo DB
-    launchpad = LaunchPad(host="ds135179.mlab.com", port=35179, name="quotas",
-                          username="mbercx", password="quotastests")
-    launchpad.reset("", require_password=False)
-
-    # Set up the firetask/work
-    firetask = ScriptTask.from_str("echo 'Howdy! Your test was successful!'")
-    firework = Firework(firetask)
-
-    # Store workflow and launch
-    launchpad.add_wf(firework)
-    launch_rocket(launchpad)
-
-
-def firework_test():
-    """
-    Script that tests the use of a Firework, consisting of various Firetasks.
-    """
-
-    # Set up the launchpad and reset it
-    launchpad = LaunchPad(host="ds135179.mlab.com", port=35179, name="quotas",
-                          username="mbercx", password="quotastests")
-    launchpad.reset("", require_password=False)
-
-    # Create the various firetasks for the firework
-    firetask1 = TemplateWriterTask(
-        {"context": {"opt1": 5.0, "opt2": "fast method"}, "template_file":
-            "simple_template.txt", "output_file": "inputs.txt"}
-    )
-    firetask2 = ScriptTask.from_str("wc -w < inputs.txt > words.txt")
-    firetask3 = FileTransferTask({"files": [{"src": "words.txt", "dest":
-        "~/words.txt"}], "mode": "copy"})
-
-    fw = Firework([firetask1, firetask2, firetask3])
-
-    # Store workflow on the mongoDB and launch it
-    launchpad.add_wf(fw)
-    launch_rocket(launchpad)
-
-
-def firetask_test():
-    """
-    It's a script that tests our very own firetask, dummy.
-
-    """
-
-    # Set up the launchpad and reset it
-    launchpad = LaunchPad(host="ds135179.mlab.com", port=35179, name="quotas",
-                          username="mbercx", password="quotastests")
-    launchpad.reset("", require_password=False)
-
-    # create the Firework consisting of a custom "Addition" task
-    firework = Firework(AdditionTask(), spec={"input_array": [1, 2]})
-
-    # store workflow and launch it locally
-    launchpad.add_wf(firework)
-    launch_rocket(launchpad, FWorker())
-
-
-def workflow_test():
-    """
-    Take a guess.
-
-    """
-
-    # Set up the launchpad and reset it
-    launchpad = LaunchPad(host="ds135179.mlab.com", port=35179, name="quotas",
-                          username="mbercx", password="quotastests")
-    launchpad.reset("", require_password=False)
-
-    # define four individual FireWorks used in the Workflow
-    task1 = ScriptTask.from_str('echo "Ingrid is the CEO."')
-    task2 = ScriptTask.from_str('echo "Jill is a manager."')
-    task3 = ScriptTask.from_str('echo "Jack is a manager."')
-    task4 = ScriptTask.from_str('echo "Kip is an intern."')
-
-    fw1 = Firework(task1)
-    fw2 = Firework(task2)
-    fw3 = Firework(task3)
-    fw4 = Firework(task4)
-
-    # assemble Workflow from FireWorks and their connections by id
-    workflow = Workflow([fw1, fw2, fw3, fw4],
-                        {fw1: [fw2, fw3], fw2: [fw4], fw3: [fw4]})
-
-    # First give the list of fireworks, then a dictionary of 'family tree'
-    # or links.
-
-    # store workflow and launch it locally
-    launchpad.add_wf(workflow)

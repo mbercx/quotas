@@ -190,7 +190,8 @@ def relax(structure_file, fix_part, fix_thickness, is_metal, verbose):
 
     current_dir = os.getcwd()
 
-    # TODO Naming is difficult because of t lack of a jsonable Slab class. Fix this after fixing that problem.
+    # TODO Naming is difficult because of the lack of a jsonable Slab class.
+    # Fix this after fixing that problem.
 
     relax_dir = os.path.join(
         current_dir, structure_file.strip(
