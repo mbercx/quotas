@@ -3,13 +3,9 @@
 import os
 import subprocess
 
-from fireworks import FireTaskBase, Firework, LaunchPad, ScriptTask, \
-    TemplateWriterTask, PyTask, \
-    FileTransferTask, FWorker, Workflow, FWAction
-from fireworks.core.rocket_launcher import launch_rocket
-from fireworks.queue.queue_launcher import launch_rocket_to_queue, rapidfire
+from fireworks import FireTaskBase, Firework, LaunchPad, PyTask, FWorker, \
+    Workflow, FWAction
 from fireworks.user_objects.queue_adapters.common_adapter import CommonAdapter
-from fw_tutorials.firetask.addition_task import AdditionTask
 
 """
 Workflow setup for the quotas calculations.
@@ -40,26 +36,6 @@ QUEUE_ADAPTER = CommonAdapter.from_dict(
      "job_name": "test",
      "logdir": "/user/antwerpen/202/vsc20248", }
 )
-
-
-class slabRelaxTask(FireTaskBase):
-    """
-    FireTask that sets up a slab geometry optimization.
-
-    """
-    _fw_name = "Slab Relaxation"
-
-    def run_task(self, fw_spec):
-        structure_file = fw_spec["structure_file"]
-        fix_part = fw_spec["fix_part"]
-        fix_thickness = fw_spec["fix_thickness"]
-        is_metal = fw_spec["is_metal"]
-
-        from quotas.cli.commands.slab import relax
-
-        relax(structure_file, fix_part, fix_thickness, is_metal)
-
-        return FWAction()
 
 
 def run_vasp(directory):
@@ -216,7 +192,6 @@ def bulk_optics_workflow(structure_file, is_metal, hse_calc, k_product):
 
     optics_firework = Firework(tasks=[setup_optics, run_optics],
                                name="Optics calculation")
-
 
     # Add the workflow to the launchpad
     workflow = Workflow(fireworks=[relax_firework, optics_firework],
