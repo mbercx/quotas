@@ -92,7 +92,7 @@ def relax(structure_file, is_metal=False, hse_calc=False, verbose=False):
 
     # Return absolute path to directory of geometry optimization for workflow
     # purposes
-    return calculation_dir
+    return os.path.abspath(calculation_dir)
 
 def dos(relax_dir, k_product, hse_calc=False):
     """
