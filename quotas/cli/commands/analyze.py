@@ -6,7 +6,9 @@ import os
 import matplotlib.pyplot as plt
 
 from pymatgen.electronic_structure.plotter import DosPlotter
-from pymatgen.io.vasp.outputs import Locpot, Vasprun
+from pymatgen.io.vasp.inputs import Poscar
+from pymatgen.io.vasp.outputs import Locpot, Vasprun, Outcar
+from pymatgen.analysis.surface_analysis import WorkFunctionAnalyzer
 
 """
 Module that defines the analysis tools for the quotas package.
@@ -25,17 +27,17 @@ def wf(directory, plot_potential=False):
 
     directory = os.path.abspath(directory)
 
-    locpot = Locpot.from_file(os.path.join(directory, "LOCPOT"))
-    vasprun = Vasprun(os.path.join(directory, "vasprun.xml"))
-
-    average_potential = locpot.get_average_along_axis(2)
-    fermi_energy = vasprun.efermi
+    wf_analyzer = WorkFunctionAnalyzer.from_files(
+        poscar_filename=os.path.join(directory, "POSCAR"),
+        locpot_filename=os.path.join(directory, "LOCPOT"),
+        outcar_filename=os.path.join(directory, "OUTCAR")
+    )
 
     if plot_potential:
-        plt.plot(average_potential)
+        wf_analyzer.get_locpot_along_slab_plot().show()
         pass #TODO Finish this part
 
-    work_function = max(average_potential) - fermi_energy
+    work_function = wf_analyzer.work_function
     print("Work function = " + str(work_function) + " eV")
 
 

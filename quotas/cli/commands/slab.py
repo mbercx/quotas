@@ -21,6 +21,13 @@ Setup scripts for the calculations of the quotas package.
 
 """
 
+__author__ = "Marnik Bercx"
+__copyright__ = "Copyright 2018, Marnik Bercx, University of Antwerp"
+__version__ = "0.2"
+__maintainer__ = "Marnik Bercx"
+__email__ = "marnik.bercx@uantwerpen.be"
+__date__ = "Apr 2018"
+
 MODULE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                           "../../set_configs")
 DFT_FUNCTIONAL = "PBE_54"
