@@ -302,3 +302,41 @@ def optics(structure_file, is_metal, hse_calc, k_product):
     from quotas.workflow import bulk_optics_workflow
 
     bulk_optics_workflow(structure_file, is_metal, hse_calc, k_product)
+
+
+@test.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("directory", nargs=1)
+def run_cust(directory):
+    """
+    Test the Custodian run.
+
+    """
+    from quotas.workflow import run_custodian
+
+    run_custodian(directory)
+
+
+@test.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("structure_file", nargs=1)
+@click.option("--fix_part", "-f", default="center",
+              help="Part of the slab to fix in the geometry optimization. "
+                   "Defaults to 'center', which is currently the only "
+                   "option. So it's not much of an option, really.")
+@click.option("--fix_thickness", "-b", default=8,
+              help="Number of layers fixed as bulk in the geometry ")
+@click.option("--is_metal", "-m", is_flag=True,
+              help="Option that indicates that the material of the slab is "
+                   "metallic. This is used to change the smearing settings "
+                   "in the geometry optimization.")
+@click.option("--k_product", "-k", default=80,
+              help="Determines the density of the k-mesh in the density of "
+                   "states calculation. k_product represents the product of "
+                   "the number of k-points corresponding to a certain "
+                   "lattice vector with the length of that lattice vector.")
+def custodian(structure_file, fix_part, fix_thickness, is_metal, k_product):
+    """
+    Test the DOS workflow script
+    """
+    from quotas.workflow import test_custodian
+
+    test_custodian(structure_file, fix_part, fix_thickness, is_metal, k_product)

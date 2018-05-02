@@ -5,8 +5,13 @@
 import os
 import subprocess
 
-from fireworks import FireTaskBase, Firework, LaunchPad, PyTask, FWorker, \
-    Workflow, FWAction
+from custodian import Custodian
+from custodian.vasp.handlers import VaspErrorHandler, \
+    UnconvergedErrorHandler
+from custodian.vasp.jobs import VaspJob
+
+from fireworks import Firework, LaunchPad, PyTask, FWorker, \
+    Workflow
 from fireworks.user_objects.queue_adapters.common_adapter import CommonAdapter
 
 """
@@ -25,6 +30,8 @@ __date__ = "Apr 2018"
 TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                             "templates")
 VASP_RUN_SCRIPT = "/user/antwerpen/202/vsc20248/local/scripts/job_workflow.sh"
+PRE_JOB_SCRIPT = "/user/antwerpen/202/vsc20248/local/scripts" \
+                 "/pre_job_commands.sh"
 
 # Set up the Launchpad for the workflows
 LAUNCHPAD = LaunchPad(host="ds135179.mlab.com", port=35179, name="quotas",
@@ -63,6 +70,31 @@ def run_vasp(directory):
 
     os.chdir(directory)
     subprocess.call(VASP_RUN_SCRIPT)
+
+
+def run_custodian(directory):
+    """
+    Run VASP under supervision of a custodian in a certain directory.
+
+    Args:
+        directory:
+
+    Returns:
+
+    """
+
+    os.chdir(directory)
+    subprocess.call(PRE_JOB_SCRIPT)
+
+    vasp_cmd = ["mpirun", "-genv", "LD_BIND_NOW=1", "vasp_std"]
+
+    handlers = [VaspErrorHandler(), UnconvergedErrorHandler()]
+    jobs = VaspJob(vasp_cmd=vasp_cmd,
+                    output_file="out",
+                    stderr_file="out")
+
+    c = Custodian(handlers, jobs, max_errors=10)
+    c.run()
 
 
 def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
@@ -206,5 +238,71 @@ def bulk_optics_workflow(structure_file, is_metal, hse_calc, k_product):
     workflow = Workflow(fireworks=[relax_firework, optics_firework],
                         links_dict={relax_firework: [optics_firework]},
                         name=structure_file + " Optics calculation")
+
+    LAUNCHPAD.add_wf(workflow)
+
+
+def test_custodian(structure_file, fix_part, fix_thickness, is_metal,
+                   k_product):
+    """
+    Testscript for using Custodian to gracefully recover from errors.
+
+    Returns:
+        None
+
+    """
+
+    current_dir = os.getcwd()
+
+    # Set up the geometry optimization from the structure file. All input is
+    # provided by the CLI arguments and options. The directory where the
+    # geometry optimization is set up is returned and passed as output,
+    # so it can be used by Firework children to run the calculation.
+    setup_relax = PyTask(func="quotas.cli.commands.slab.relax",
+                         kwargs={"structure_file": structure_file,
+                                 "fix_part": fix_part,
+                                 "fix_thickness": fix_thickness,
+                                 "is_metal": is_metal,
+                                 "verbose": False},
+                         outputs=["relax_dir"]
+                         )
+
+    # Run the VASP calculation.
+    run_relax = PyTask(func="quotas.workflow.run_custodian",
+                       inputs=["relax_dir"])
+
+    relax_firework = Firework(tasks=[setup_relax, run_relax],
+                              name="Slab Geometry optimization",
+                              spec={"_launch_dir": current_dir})
+
+    # -----> Here we would add a check to see if the job completed
+    # successfully. If not, we can add another FireWork that makes the
+    # necessary adjustments and restarts the calculation.
+
+    # Set up the calculation
+    setup_dos = PyTask(func="quotas.cli.commands.slab.dos",
+                       inputs=["relax_dir"],
+                       kwargs={"k_product": k_product},
+                       outputs=["dos_dir"])
+
+    # Run the VASP calculation.
+    run_dos = PyTask(func="quotas.workflow.run_custodian",
+                     inputs=["dos_dir"])
+
+    dos_firework = Firework(tasks=[setup_dos, run_dos],
+                            name="DOS calculation")
+
+    # ----> Here we would add another check...
+
+    ## Firework 3
+
+    # Extract the necessary output
+
+    # Calculate the work function
+
+    # Add the workflow to the launchpad
+    workflow = Workflow(fireworks=[relax_firework, dos_firework],
+                        links_dict={relax_firework: [dos_firework]},
+                        name=structure_file + " DOS calculation (Custodian)")
 
     LAUNCHPAD.add_wf(workflow)

@@ -262,6 +262,9 @@ def generate_divisors(number):
         yield divisor
         divisor -= 1
 
+# Stolen from pymatgen.analysis.surface_analyzer
+# Idea is to write a nice postprocessing tool extracting the necessary
+# output from the work function and DOS calculations.
 
 class WorkFunctionAnalyzer(MSONable):
     """
@@ -504,3 +507,25 @@ class WorkFunctionAnalyzer(MSONable):
 
         return cls.__init__(d["poscar"], d["locpot"], d["outcar"])
 
+# Stolen from https://goshippo.com/blog/measure-real-size-any-python-object/
+# Used to calculate the actual total size of a python object
+
+def get_size(obj, seen=None):
+    """Recursively finds size of objects"""
+    size = sys.getsizeof(obj)
+    if seen is None:
+        seen = set()
+    obj_id = id(obj)
+    if obj_id in seen:
+        return 0
+    # Important mark as seen *before* entering recursion to gracefully handle
+    # self-referential objects
+    seen.add(obj_id)
+    if isinstance(obj, dict):
+        size += sum([get_size(v, seen) for v in obj.values()])
+        size += sum([get_size(k, seen) for k in obj.keys()])
+    elif hasattr(obj, '__dict__'):
+        size += get_size(obj.__dict__, seen)
+    elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
+        size += sum([get_size(i, seen) for i in obj])
+    return size
