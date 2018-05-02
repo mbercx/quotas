@@ -89,9 +89,9 @@ def run_custodian(directory):
     vasp_cmd = ["mpirun", "-genv", "LD_BIND_NOW=1", "vasp_std"]
 
     handlers = [VaspErrorHandler(), UnconvergedErrorHandler()]
-    jobs = VaspJob(vasp_cmd=vasp_cmd,
+    jobs = [VaspJob(vasp_cmd=vasp_cmd,
                     output_file="out",
-                    stderr_file="out")
+                    stderr_file="out")]
 
     c = Custodian(handlers, jobs, max_errors=10)
     c.run()
