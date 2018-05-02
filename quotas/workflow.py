@@ -86,7 +86,7 @@ def run_custodian(directory):
     os.chdir(directory)
     subprocess.call(PRE_JOB_SCRIPT)
 
-    vasp_cmd = ["mpirun", "-genv", "LD_BIND_NOW=1", "vasp_std"]
+    vasp_cmd = ["mpirun -genv LD_BIND_NOW=1 vasp_std"]
 
     handlers = [VaspErrorHandler(output_filename="out"),
                 UnconvergedErrorHandler(output_filename="out")]
