@@ -87,14 +87,15 @@ def run_custodian(directory):
     os.chdir(directory)
     #subprocess.call(PRE_JOB_SCRIPT)
 
+    output = os.path.join(directory, "out")
     vasp_cmd = VASP_RUN_SCRIPT
 
-    handlers = [VaspErrorHandler(output_filename="out"),
-                UnconvergedErrorHandler(output_filename="out")]
+    handlers = [VaspErrorHandler(output_filename=output),
+                UnconvergedErrorHandler(output_filename=output)]
 
     jobs = [VaspJob(vasp_cmd=vasp_cmd,
-                    output_file="out",
-                    stderr_file="out")]
+                    output_file=output,
+                    stderr_file=output)]
 
     c = Custodian(handlers, jobs, max_errors=10)
     c.run()
