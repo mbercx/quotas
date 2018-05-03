@@ -83,6 +83,7 @@ def run_custodian(directory):
 
     """
 
+    directory = os.path.abspath(directory)
     os.chdir(directory)
     #subprocess.call(PRE_JOB_SCRIPT)
 
