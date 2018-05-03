@@ -84,12 +84,13 @@ def run_custodian(directory):
     """
 
     os.chdir(directory)
-    subprocess.call(PRE_JOB_SCRIPT)
+    #subprocess.call(PRE_JOB_SCRIPT)
 
-    vasp_cmd = ["mpirun", "-genv LD_BIND_NOW=1", "vasp_std"]
+    vasp_cmd = VASP_RUN_SCRIPT
 
     handlers = [VaspErrorHandler(output_filename="out"),
                 UnconvergedErrorHandler(output_filename="out")]
+
     jobs = [VaspJob(vasp_cmd=vasp_cmd,
                     output_file="out",
                     stderr_file="out")]
