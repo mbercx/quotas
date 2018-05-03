@@ -4,6 +4,7 @@
 
 import os
 import subprocess
+import shlex
 
 from custodian import Custodian
 from custodian.vasp.handlers import VaspErrorHandler, \
@@ -87,7 +88,7 @@ def run_custodian(directory):
     #subprocess.call(PRE_JOB_SCRIPT)
 
     output = os.path.join(directory, "out")
-    vasp_cmd = CUSTODIAN_SCRIPT
+    vasp_cmd = shlex.split("mpirun -genv LD_BIND_NOW=1 vasp_std")
 
     handlers = [VaspErrorHandler(output_filename=output),
                 UnconvergedErrorHandler(output_filename=output)]
