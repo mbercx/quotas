@@ -30,8 +30,7 @@ __date__ = "Apr 2018"
 TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                             "templates")
 VASP_RUN_SCRIPT = "/user/antwerpen/202/vsc20248/local/scripts/job_workflow.sh"
-PRE_JOB_SCRIPT = "/user/antwerpen/202/vsc20248/local/scripts" \
-                 "/pre_job_commands.sh"
+CUSTODIAN_SCRIPT = "/user/antwerpen/202/vsc20248/local/scripts/job_custodian.sh"
 
 # Set up the Launchpad for the workflows
 LAUNCHPAD = LaunchPad(host="ds135179.mlab.com", port=35179, name="quotas",
@@ -88,7 +87,7 @@ def run_custodian(directory):
     #subprocess.call(PRE_JOB_SCRIPT)
 
     output = os.path.join(directory, "out")
-    vasp_cmd = VASP_RUN_SCRIPT
+    vasp_cmd = CUSTODIAN_SCRIPT
 
     handlers = [VaspErrorHandler(output_filename=output),
                 UnconvergedErrorHandler(output_filename=output)]
