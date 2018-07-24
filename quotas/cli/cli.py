@@ -332,6 +332,17 @@ def run_cust(directory):
 
     run_custodian(directory)
 
+@test.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("directory", nargs=1)
+def check(directory):
+    """
+    Check a VASP run to see if it has completed succesfully.
+
+    """
+    from quotas.cli.commands.util import check_run
+
+    check_run(directory=directory)
+
 
 @test.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("structure_file", nargs=1)

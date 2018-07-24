@@ -6,6 +6,7 @@ import os
 
 from quotas.core import find_irr_kpoints, find_suitable_kpar
 from pymatgen.core import Structure
+from pymatgen.io.vasp.outputs import Vasprun, UnconvergedVASPWarning
 from pymatgen.io.vasp.inputs import Incar, Kpoints
 
 
@@ -67,3 +68,25 @@ def nkp(directory):
 
     print("Number of irreducible kpoints = " +
           str(find_irr_kpoints(structure, kpoints)))
+
+
+def check_run(directory):
+    """
+    Check a VASP run to see if it has completed successfully.
+
+    Args:
+        directory:
+
+    Returns:
+
+    """
+    try:
+        out = Vasprun(os.path.join(directory, "vasprun.xml"))
+    except FileNotFoundError:
+        print("No vasprun.xml found in run directory.")
+    except UnconvergedVASPWarning:
+        print("Calculation has not converged successfully.")
+
+
+
+
