@@ -80,6 +80,9 @@ def check_run(directory):
     Returns:
 
     """
+    import warnings
+    warnings.filterwarnings("error")
+
     try:
         out = Vasprun(os.path.join(directory, "vasprun.xml"))
     except FileNotFoundError:
