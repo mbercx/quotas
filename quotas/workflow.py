@@ -27,32 +27,16 @@ __maintainer__ = "Marnik Bercx"
 __email__ = "marnik.bercx@uantwerpen.be"
 __date__ = "Apr 2018"
 
-# Directory with templates for the Template
+# Directory with templates for the Template class
 TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                             "templates")
 VASP_RUN_SCRIPT = "/user/antwerpen/202/vsc20248/local/scripts/job_workflow.sh"
-VASP_RUN_COMMAND = "mpirun -genv LD_BIND_NOW=1 vasp_std"
+VASP_RUN_COMMAND = "bash /user/antwerpen/202/vsc20248/local/scripts" \
+                   "/job_workflow.sh"
 
 # Set up the Launchpad for the workflows
 LAUNCHPAD = LaunchPad(host="ds135179.mlab.com", port=35179, name="quotas",
                       username="mbercx", password="quotastests")
-
-# Set up the FireWorker
-FIREWORKER = FWorker(name="leibniz")
-
-# Set up the queue adapter
-QUEUE_ADAPTER = CommonAdapter.from_dict(
-    {"_fw_q_type": "PBS",
-     "rocket_launch": "source ~/local/envs/pymatgen.env; "
-                      "rlaunch singleshot",
-     "nnodes": "1",
-     "ppnode": "28",
-     "walltime": "72:00:00",
-     "queue": "batch",
-     "job_name": "test",
-     "logdir": "/user/antwerpen/202/vsc20248", }
-)
-
 
 def run_vasp(directory):
     """
@@ -100,7 +84,8 @@ def run_custodian(directory):
     c.run()
 
 
-def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
+def dos_workflow(structure_file, fix_part, fix_thickness, is_metal,
+                 k_product, in_custodian):
     """
     Set up a workflow to calculate the DOS of a slab file. Will set up two
     FireWorks:
@@ -117,21 +102,17 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
 
     Args:
         structure_file (str): Name of the structure file which contains the
-        slab geometry.
+            slab geometry.
         fix_part (str): Defines the part of the slab that will remain fixed
-        during the geometry optimization.
+            during the geometry optimization.
         fix_thickness (int): Number of atomic layers to fix for the geometry
-        optimization.
+            optimization.
         is_metal (bool): Specifies whether or not the material is metallic.
-        Sets the smearing method to Methfessel-Paxton.
+            Sets the smearing method to Methfessel-Paxton.
         k_product (int): Determines the density of the k-mesh in the density of
-        states calculation. k_product represents the product of the number
+            states calculation. k_product represents the product of the number
         of k-points corresponding to a certain lattice vector with the
-        length of that lattice vector.
-
-    Returns:
-        None
-
+            length of that lattice vector.
     """
 
     current_dir = os.getcwd()
@@ -149,38 +130,43 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product):
                          outputs=["relax_dir"]
                          )
 
-    # Run the VASP calculation.
-    run_relax = PyTask(func="quotas.workflow.run_vasp",
-                       inputs=["relax_dir"])
+    if in_custodian:
+        # Run the VASP calculation within a Custodian
+        run_relax = PyTask(func="quotas.workflow.run_custodian",
+                           inputs=["relax_dir"])
+    else:
+        # Run the VASP calculation.
+        run_relax = PyTask(func="quotas.workflow.run_vasp",
+                           inputs=["relax_dir"])
 
     relax_firework = Firework(tasks=[setup_relax, run_relax],
                               name="Slab Geometry optimization",
                               spec={"_launch_dir": current_dir})
 
-    # -----> Here we would add a check to see if the job completed
-    # successfully. If not, we can add another FireWork that makes the
-    # necessary adjustments and restarts the calculation.
-
-    # Set up the calculation
+    # Set up the DOS calculation, based on the structure found from the
+    # geometry optimization.
     setup_dos = PyTask(func="quotas.cli.commands.slab.dos",
                        inputs=["relax_dir"],
                        kwargs={"k_product": k_product},
                        outputs=["dos_dir"])
 
-    # Run the VASP calculation.
-    run_dos = PyTask(func="quotas.workflow.run_vasp",
-                     inputs=["dos_dir"])
+    if in_custodian:
+        # Run the VASP calculation within a Custodian
+        run_dos = PyTask(func="quotas.workflow.run_custodian",
+                           inputs=["dos_dir"])
+    else:
+        # Run the VASP calculation
+        run_dos = PyTask(func="quotas.workflow.run_vasp",
+                           inputs=["dos_dir"])
 
     dos_firework = Firework(tasks=[setup_dos, run_dos],
                             name="DOS calculation")
 
-    # ----> Here we would add another check...
-
-    ## Firework 3
+    # Postprocessing
+    # TODO Add postprocessing firework
 
     # Extract the necessary output
-
-    # Calculate the work function
+    # Calculate the work function -> send to database?
 
     # Add the workflow to the launchpad
     workflow = Workflow(fireworks=[relax_firework, dos_firework],
