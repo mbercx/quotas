@@ -247,14 +247,16 @@ def nkp(directory):
 
     nkp(directory=directory)
 
-@main.group()
-def test():
+
+@main.group(context_settings=CONTEXT_SETTINGS)
+def workflow():
     """
-    Set of test scripts for various purposes.
+    Set up workflows for quotas calculations.
     """
     pass
 
-@test.command(context_settings=CONTEXT_SETTINGS)
+
+@workflow.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("structure_file", nargs=1)
 @click.option("--fix_part", "-f", default="center",
               help="Part of the slab to fix in the geometry optimization. "
@@ -271,15 +273,30 @@ def test():
                    "states calculation. k_product represents the product of "
                    "the number of k-points corresponding to a certain "
                    "lattice vector with the length of that lattice vector.")
-def dos(structure_file, fix_part, fix_thickness, is_metal, k_product):
+@click.option("--in_custodian", "-c", is_flag=True,
+              help="Specify that the VASP calculations of the workflow "
+                   "should be run in a custodian.")
+def dos(structure_file, fix_part, fix_thickness, is_metal, k_product,
+        in_custodian):
     """
-    Test the DOS workflow script
+    Set up a DOS workflow script.
     """
     from quotas.workflow import dos_workflow
 
-    dos_workflow(structure_file, fix_part, fix_thickness, is_metal, k_product)
+    dos_workflow(structure_file=structure_file,
+                 fix_part=fix_part,
+                 fix_thickness=fix_thickness,
+                 is_metal=is_metal,
+                 k_product=k_product,
+                 in_custodian=in_custodian)
 
 
+@main.group(context_settings=CONTEXT_SETTINGS)
+def test():
+    """
+    Set of test scripts for various purposes.
+    """
+    pass
 
 @test.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("structure_file", nargs=1)
