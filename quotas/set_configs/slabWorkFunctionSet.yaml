@@ -122,7 +122,7 @@ INCAR:
   LVHAR: true
   LWAVE: false
   MAGMOM: 0
-  NELM: 100
+  NELM: 200
   NELMIN: 8
   PREC: Accurate
 KPOINTS:
