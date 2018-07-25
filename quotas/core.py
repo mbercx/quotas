@@ -155,8 +155,8 @@ def find_atomic_layers(structure, layer_tol=1e-2):
             # Compare the third fractional coordinate of the site with that of
             # the atoms in the considered layer
             for atom_site in layer.copy():
-                 if abs(atom_site.frac_coords[2]
-                                - site.frac_coords[2]) < layer_tol:
+                 if abs(atom_site.frac_coords[2] - site.frac_coords[2]) % 1.0 \
+                         < layer_tol:
                      is_in_layer = True
                      layer.append(site)
                      break # Break out of the loop, else the site is added
