@@ -80,7 +80,7 @@ def run_custodian(directory):
                     output_file=output,
                     stderr_file=output)]
 
-    c = Custodian(handlers, jobs, max_errors=10)
+    c = Custodian(handlers, jobs, max_errors=3)
     c.run()
 
 

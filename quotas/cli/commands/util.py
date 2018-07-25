@@ -83,12 +83,16 @@ def check_run(directory):
     import warnings
     warnings.filterwarnings("error")
 
+    # TODO This is pretty slow because the whole vasprun has to be parsed.
+    # Improve function somehow.
+
     try:
         out = Vasprun(os.path.join(directory, "vasprun.xml"))
     except FileNotFoundError:
         print("No vasprun.xml found in run directory.")
     except UnconvergedVASPWarning:
         print("Calculation has not converged successfully.")
+
 
 
 

@@ -1,6 +1,6 @@
 # PBE+U calculations used for the work function/dos calculation of a slab.
 INCAR:
-  ALGO: Fast
+  ALGO: Normal
   AMIN: 0.01
   AMIX: 0.2
   BMIX: 0.001
