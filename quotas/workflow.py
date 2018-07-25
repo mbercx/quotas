@@ -176,7 +176,8 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal,
     LAUNCHPAD.add_wf(workflow)
 
 
-def bulk_optics_workflow(structure_file, is_metal, hse_calc, k_product):
+def bulk_optics_workflow(structure_file, is_metal, hse_calc, k_product,
+                         in_custodian):
     """
     Sets up a workflow that calculates the dielectric function for the bulk
     structure of a material.
@@ -199,9 +200,14 @@ def bulk_optics_workflow(structure_file, is_metal, hse_calc, k_product):
                          outputs=["relax_dir"]
                          )
 
-    # Run VASP
-    run_relax = PyTask(func="quotas.workflow.run_vasp",
-                       inputs=["relax_dir"])
+    if in_custodian:
+        # Run the VASP calculation within a Custodian
+        run_relax = PyTask(func="quotas.workflow.run_custodian",
+                           inputs=["relax_dir"])
+    else:
+        # Run the VASP calculation
+        run_relax = PyTask(func="quotas.workflow.run_vasp",
+                           inputs=["relax_dir"])
 
     relax_firework = Firework(tasks=[setup_relax, run_relax],
                               name="Bulk Geometry optimization",
@@ -216,9 +222,14 @@ def bulk_optics_workflow(structure_file, is_metal, hse_calc, k_product):
                                   "verbose": False},
                           outputs=["optics_dir"])
 
-    # Run VASP
-    run_optics = PyTask(func="quotas.workflow.run_vasp",
-                        inputs=["optics_dir"])
+    if in_custodian:
+        # Run the VASP calculation within a Custodian
+        run_optics = PyTask(func="quotas.workflow.run_custodian",
+                           inputs=["optics_dir"])
+    else:
+        # Run the VASP calculation
+        run_optics = PyTask(func="quotas.workflow.run_vasp",
+                           inputs=["optics_dir"])
 
     optics_firework = Firework(tasks=[setup_optics, run_optics],
                                name="Optics calculation")
