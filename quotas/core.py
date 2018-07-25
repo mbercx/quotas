@@ -66,19 +66,18 @@ def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
         if part == "center":
 
             # Even number of layers
-            if len(atomic_layers)%2 == 0:
+            if len(atomic_layers) % 2 == 0:
 
                 # Check if the user requested an odd number of layers for the
                 # fixed part of the slab
-                if thickness%2 == 1:
-
+                if thickness % 2 == 1:
                     print("Found an even number of layers, but the user " +
                           "requested an odd number of fixed layers. Adding "
                           "one layer to the fixed part of the slab.")
                     thickness += 1
 
             # Odd number of layers
-            if len(atomic_layers)%2 == 1:
+            if len(atomic_layers) % 2 == 1:
 
                 # Check if the user requested an even number of layers for the
                 # fixed part of the slab
@@ -89,7 +88,7 @@ def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
                     thickness += 1
 
             # Calculate the number of layers to optimize on each site
-            n_optimize_layers = int((len(atomic_layers) - thickness)/2)
+            n_optimize_layers = int((len(atomic_layers) - thickness) / 2)
 
             if n_optimize_layers < 5:
                 print("WARNING: Less than 5 layers are optimized on each "
@@ -102,7 +101,7 @@ def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
         else:
             raise NotImplementedError("Requested part is not implemented " +
                                       "(yet).")
-            #TODO Implement oneside
+            # TODO Implement oneside
 
         fixed_sites = [site for layer in fixed_layers for site in layer]
 
@@ -120,7 +119,8 @@ def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
 
     else:
         raise NotImplementedError("Requested method is not implemented (yet).")
-        #TODO Implement angstrom
+        # TODO Implement angstrom
+
 
 def find_atomic_layers(structure, layer_tol=1e-2):
     """
@@ -155,22 +155,23 @@ def find_atomic_layers(structure, layer_tol=1e-2):
             # Compare the third fractional coordinate of the site with that of
             # the atoms in the considered layer
             for atom_site in layer.copy():
-                 if abs(atom_site.frac_coords[2] - site.frac_coords[2]) % 1.0 \
-                         < layer_tol:
-                     is_in_layer = True
-                     layer.append(site)
-                     break # Break out of the loop, else the site is added
-                           # multiple times
+                frac_dist = abs(atom_site.frac_coords[2] - site.frac_coords[2])
+                if frac_dist < layer_tol or abs(frac_dist - 1.0) < layer_tol:
+                    is_in_layer = True
+                    layer.append(site)
+                    break  # Break out of the loop, else the site is added
+                    # multiple times
 
         # If the site is not found in any of the atomic layers, create a new
         # atomic layer
         if is_in_layer == False:
-            atomic_layers.append([site,])
+            atomic_layers.append([site, ])
 
     # Sort the atomic layers
     atomic_layers.sort(key=lambda layer: layer[0].frac_coords[2])
 
     return atomic_layers
+
 
 def write_all_slab_terminations(structure, miller_indices, min_slab_size,
                                 min_vacuum_size):
@@ -194,14 +195,13 @@ def write_all_slab_terminations(structure, miller_indices, min_slab_size,
     letter_counter = 0
 
     for slab in slabs:
-
         slab.sort(reverse=True)
 
         slab_letter = string.ascii_lowercase[letter_counter]
         letter_counter += 1
 
         filename = "".join([str(number) for number in miller_indices]) + "_" \
-                    + slab_letter + "_" + str(min_slab_size) + "l_POSCAR.vasp"
+                   + slab_letter + "_" + str(min_slab_size) + "l_POSCAR.vasp"
 
         slab.to(fmt='vasp', filename=filename)
 
@@ -239,7 +239,7 @@ def find_irr_kpoints(structure, kpoints):
 
     spg = SpacegroupAnalyzer(structure)
 
-    #TODO Find and fix bug!
+    # TODO Find and fix bug!
     return len(spg.get_ir_reciprocal_mesh(kpoints.kpts))
 
 
@@ -252,15 +252,16 @@ def generate_divisors(number):
     Returns:
 
     """
-    divisor = int(number/2)
+    divisor = int(number / 2)
 
     while divisor != 0:
 
-        while number%divisor != 0:
+        while number % divisor != 0:
             divisor -= 1
 
         yield divisor
         divisor -= 1
+
 
 # Stolen from pymatgen.analysis.surface_analyzer
 # Idea is to write a nice postprocessing tool extracting the necessary
@@ -337,9 +338,10 @@ class WorkFunctionAnalyzer(MSONable):
 
         # properties that can be shifted
         slab = poscar.structure.copy()
-        slab.translate_sites([i for i, site in enumerate(slab)], [0,0,shift])
+        slab.translate_sites([i for i, site in enumerate(slab)], [0, 0, shift])
         self.slab = slab
-        self.sorted_sites = sorted(self.slab, key=lambda site: site.frac_coords[2])
+        self.sorted_sites = sorted(self.slab,
+                                   key=lambda site: site.frac_coords[2])
 
         # Get the plot points between 0 and c
         # increments of the number of locpot points
@@ -370,7 +372,7 @@ class WorkFunctionAnalyzer(MSONable):
         # get the work function
         self.work_function = self.vacuum_locpot - self.efermi
         # for setting ylim and annotating
-        self.ave_locpot = (self.vacuum_locpot-min(self.locpot_along_c))/2
+        self.ave_locpot = (self.vacuum_locpot - min(self.locpot_along_c)) / 2
 
     def get_locpot_along_slab_plot(self, label_energies=True, plt=None,
                                    label_fontsize=10):
@@ -415,7 +417,7 @@ class WorkFunctionAnalyzer(MSONable):
             plt = self.get_labels(plt, label_fontsize=label_fontsize)
         plt.xlim([0, 1])
         plt.ylim([min(self.locpot_along_c),
-                  self.vacuum_locpot+self.ave_locpot*0.2])
+                  self.vacuum_locpot + self.ave_locpot * 0.2])
         plt.xlabel(r"Fractional coordinates ($\hat{c}$)", fontsize=25)
         plt.xticks(fontsize=15, rotation=45)
         plt.ylabel(r"Energy (eV)", fontsize=25)
@@ -439,36 +441,37 @@ class WorkFunctionAnalyzer(MSONable):
         vleft = [i for i in self.along_c if i <= minc]
         vright = [i for i in self.along_c if i >= maxc]
         if max(vleft) - min(vleft) > max(vright) - min(vright):
-            label_in_vac = (max(vleft) - min(vleft))/2
+            label_in_vac = (max(vleft) - min(vleft)) / 2
         else:
-            label_in_vac = (max(vright) - min(vright))/2 + maxc
+            label_in_vac = (max(vright) - min(vright)) / 2 + maxc
 
         # label the vacuum locpot
         label_in_bulk = maxc - (maxc - minc) / 2
-        plt.plot([0, 1], [self.vacuum_locpot]*2, 'b--', zorder=-5, linewidth=1)
-        xy = [label_in_bulk, self.vacuum_locpot+self.ave_locpot*0.05]
-        plt.annotate(r"$V_{vac}=%.2f$" %(self.vacuum_locpot), xy=xy,
+        plt.plot([0, 1], [self.vacuum_locpot] * 2, 'b--', zorder=-5,
+                 linewidth=1)
+        xy = [label_in_bulk, self.vacuum_locpot + self.ave_locpot * 0.05]
+        plt.annotate(r"$V_{vac}=%.2f$" % (self.vacuum_locpot), xy=xy,
                      xytext=xy, color='b', fontsize=label_fontsize)
 
         # label the fermi energy
-        plt.plot([0, 1], [self.efermi]*2, 'g--',
+        plt.plot([0, 1], [self.efermi] * 2, 'g--',
                  zorder=-5, linewidth=3)
-        xy = [label_in_bulk, self.efermi+self.ave_locpot*0.05]
-        plt.annotate(r"$E_F=%.2f$" %(self.efermi), xytext=xy,
+        xy = [label_in_bulk, self.efermi + self.ave_locpot * 0.05]
+        plt.annotate(r"$E_F=%.2f$" % (self.efermi), xytext=xy,
                      xy=xy, fontsize=label_fontsize, color='g')
 
         # label the bulk-like locpot
-        plt.plot([0, 1], [self.ave_bulk_p]*2, 'r--', linewidth=1., zorder=-1)
+        plt.plot([0, 1], [self.ave_bulk_p] * 2, 'r--', linewidth=1., zorder=-1)
         print(label_in_vac)
         xy = [label_in_vac, self.ave_bulk_p + self.ave_locpot * 0.05]
         plt.annotate(r"$V^{interior}_{slab}=%.2f$" % (self.ave_bulk_p),
                      xy=xy, xytext=xy, color='r', fontsize=label_fontsize)
 
         # label the work function as a barrier
-        plt.plot([label_in_vac]*2, [self.efermi, self.vacuum_locpot],
+        plt.plot([label_in_vac] * 2, [self.efermi, self.vacuum_locpot],
                  'k--', zorder=-5, linewidth=2)
         xy = [label_in_vac, self.efermi + self.ave_locpot * 0.05]
-        plt.annotate(r"$\Phi=%.2f$" %(self.work_function),
+        plt.annotate(r"$\Phi=%.2f$" % (self.work_function),
                      xy=xy, xytext=xy, fontsize=label_fontsize)
 
         return plt
@@ -507,6 +510,7 @@ class WorkFunctionAnalyzer(MSONable):
 
         return cls.__init__(d["poscar"], d["locpot"], d["outcar"])
 
+
 # Stolen from https://goshippo.com/blog/measure-real-size-any-python-object/
 # Used to calculate the actual total size of a python object
 
@@ -526,6 +530,7 @@ def get_size(obj, seen=None):
         size += sum([get_size(k, seen) for k in obj.keys()])
     elif hasattr(obj, '__dict__'):
         size += get_size(obj.__dict__, seen)
-    elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
+    elif hasattr(obj, '__iter__') and not isinstance(obj,
+                                                     (str, bytes, bytearray)):
         size += sum([get_size(i, seen) for i in obj])
     return size
