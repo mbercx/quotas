@@ -1,12 +1,12 @@
 # Standard SCF calculation settjngs
 INCAR:
   ALGO: Normal
-  EDIFF: 1.0e-04
+  EDIFF: 1.0e-08
   ENCUT: 500
   ISMEAR: -5
   ISPIN: 2
   LCHARG: false
-  LREAL: AUTO
+  LREAL: false
   LWAVE: false
   MAGMOM: 0
   NELM: 100
