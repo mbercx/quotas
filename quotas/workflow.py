@@ -73,7 +73,13 @@ def run_custodian(directory):
     output = os.path.join(directory, "out")
     vasp_cmd = shlex.split(VASP_RUN_COMMAND)
 
-    handlers = [VaspErrorHandler(output_filename=output),
+    # Choose not to use certain error messages to be handled
+    error_subset = list(VaspErrorHandler.error_msgs.keys())
+    error_subset.remove("brmix")
+    vasp_handler = VaspErrorHandler(output_filename=output,
+                                    errors_subset_to_catch=error_subset)
+
+    handlers = [vasp_handler,
                 UnconvergedErrorHandler(output_filename=output)]
 
     jobs = [VaspJob(vasp_cmd=vasp_cmd,
