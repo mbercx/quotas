@@ -6,7 +6,10 @@ import os
 import subprocess
 import shlex
 
+from pymatgen.io.vasp import VaspInput
+
 from custodian import Custodian
+from custodian.utils import backup
 from custodian.vasp.handlers import VaspErrorHandler, \
     UnconvergedErrorHandler
 from custodian.vasp.jobs import VaspJob
@@ -79,7 +82,9 @@ def run_custodian(directory):
     vasp_handler = VaspErrorHandler(output_filename=output,
                                     errors_subset_to_catch=error_subset)
 
-    handlers = [vasp_handler,
+    quotas_handler = QuotasErrorHandler(output_filename=output)
+
+    handlers = [quotas_handler,
                 UnconvergedErrorHandler(output_filename=output)]
 
     jobs = [VaspJob(vasp_cmd=vasp_cmd,
@@ -312,3 +317,42 @@ def test_custodian(structure_file, fix_part, fix_thickness, is_metal,
                         name=structure_file + " DOS calculation (Custodian)")
 
     LAUNCHPAD.add_wf(workflow)
+
+
+VASP_BACKUP_FILES = {"INCAR", "KPOINTS", "POSCAR", "OUTCAR", "CONTCAR",
+                     "OSZICAR", "vasprun.xml", "vasp.out", "std_err.txt"}
+
+class QuotasErrorHandler(VaspErrorHandler):
+    """
+    Overwritten error handler for the issues we encounter often in slab
+    calculations.
+
+    """
+    error_msgs = {
+        "subspacematrix": ["WARNING: Sub-Space-Matrix is not hermitian in "
+                           "DAV"],
+        "zbrent": ["ZBRENT: fatal internal in",
+                   "ZBRENT: fatal error in bracketing"]
+    }
+
+    def correct(self):
+        backup(VASP_BACKUP_FILES | {self.output_filename})
+        actions = []
+        vi = VaspInput.from_directory(".")
+
+        # If we encounter a DAV Sub-Space-Matrix error
+        if "subspacematrix" in self.errors:
+            # Switch to the CG algorithm
+            actions.append(
+                {"dict": "INCAR", "action": {"_set": {"ALGO": "All"}}}
+            )
+
+        # If we encounter a ZBRENT error
+        if "zbrent" in self.errors:
+            # Switch to Quasi-Newton algorithm
+            actions.append({"dict": "INCAR",
+                            "action": {"_set": {"IBRION": 1}}})
+            # Move CONTCAR to POSCAR
+            actions.append({"file": "CONTCAR",
+                            "action": {"_file_copy": {"dest": "POSCAR"}}})
+
