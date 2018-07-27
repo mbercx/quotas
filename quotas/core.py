@@ -5,6 +5,7 @@
 import numpy as np
 import copy
 import string
+import sys
 
 from pymatgen.core import Structure
 from pymatgen.core.surface import SlabGenerator

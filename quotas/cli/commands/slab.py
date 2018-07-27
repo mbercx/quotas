@@ -205,6 +205,9 @@ def relax(structure_file, fix_part, fix_thickness, is_metal=False,
             slab_structure.composition.reduced_formula + "_"
         ).strip(".json").strip(".cif"), fix_part + "_" + "relax")
 
+    if os.path.exists(calculation_dir):
+        clean_dir(calculation_dir)
+
     # Write the input files to the calculation directory
     geo_optimization.write_input(calculation_dir)
 
@@ -243,6 +246,9 @@ def wf(relax_dir, k_product, hse_calc=False):
         # Set up the calculation directory
         calculation_dir = os.path.join(os.path.split(relax_dir)[0],
                                        "dftu_wf")
+
+    if os.path.exists(calculation_dir):
+        clean_dir(calculation_dir)
 
     # Set up the calculation
     work_function_calc = slabWorkFunctionSet.from_relax_calc(
@@ -298,8 +304,28 @@ def dos(relax_dir, k_product, hse_calc=False):
         # Set up the calculation directory
         calculation_dir = os.path.join(os.path.split(relax_dir)[0], "dftu_dos")
 
+    if os.path.exists(calculation_dir):
+        clean_dir(calculation_dir)
+
     # Write the input files of the calculation
     dos_calc.write_input(calculation_dir)
 
     # Return the calculation director for workflow purposes
     return calculation_dir
+
+
+def clean_dir(directory):
+    """
+    Clean up a directory so a new calculation can be started in it.
+
+    Right now, it just removes all files from the directory. Might want to
+    change that later.
+
+    """
+    for file in os.listdir(directory):
+        file_path = os.path.join(directory, file)
+        try:
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            print(e)
