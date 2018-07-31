@@ -13,6 +13,7 @@ from custodian.utils import backup
 from custodian.vasp.handlers import VaspErrorHandler, \
     UnconvergedErrorHandler
 from custodian.vasp.jobs import VaspJob
+from custodian.vasp.interpreter import VaspModder
 
 from fireworks import Firework, LaunchPad, PyTask, FWorker, \
     Workflow
@@ -339,6 +340,39 @@ class QuotasErrorHandler(VaspErrorHandler):
                    "ZBRENT: fatal error in bracketing"]
     }
 
+    def __init__(self, output_filename="vasp.out", natoms_large_cell=100,
+                 errors_subset_to_catch=None):
+        """
+        Initializes the handler with the output file to check.
+
+        Args:
+            output_filename (str): This is the file where the stdout for vasp
+                is being redirected. The error messages that are checked are
+                present in the stdout. Defaults to "vasp.out", which is the
+                default redirect used by :class:`custodian.vasp.jobs.VaspJob`.
+            natoms_large_cell (int): Number of atoms threshold to treat cell
+                as large. Affects the correction of certain errors. Defaults to
+                100.
+            errors_subset_to_detect (list): A subset of errors to catch. The
+                default is None, which means all supported errors are detected.
+                Use this to only catch only a subset of supported errors.
+                E.g., ["eddrrm", "zheev"] will only catch the eddrmm and zheev
+                errors, and not others. If you wish to only excluded one or
+                two of the errors, you can create this list by the following
+                lines:
+
+                ```
+                subset = list(QuotasErrorHandler.error_msgs.keys())
+                subset.pop("eddrrm")
+
+                handler = QuotasErrorHandler(errors_subset_to_catch=subset)
+                ```
+        """
+        super(QuotasErrorHandler, self).__init__(output_filename=output_filename,
+                                      natoms_large_cell=natoms_large_cell)
+        self.errors_subset_to_catch = errors_subset_to_catch or \
+            list(QuotasErrorHandler.error_msgs.keys())
+
     def correct(self):
         backup(VASP_BACKUP_FILES | {self.output_filename})
         actions = []
@@ -360,3 +394,5 @@ class QuotasErrorHandler(VaspErrorHandler):
             actions.append({"file": "CONTCAR",
                             "action": {"_file_copy": {"dest": "POSCAR"}}})
 
+        VaspModder(vi=vi).apply_actions(actions)
+        return {"errors": list(self.errors), "actions": actions}
