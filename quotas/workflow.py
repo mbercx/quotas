@@ -336,6 +336,7 @@ class QuotasErrorHandler(VaspErrorHandler):
     error_msgs = {
         "subspacematrix": ["WARNING: Sub-Space-Matrix is not hermitian in "
                            "DAV"],
+        "edddav": ["Error EDDDAV: Call to ZHEGV failed"],
         "zbrent": ["ZBRENT: fatal internal in",
                    "ZBRENT: fatal error in bracketing"]
     }
@@ -379,7 +380,7 @@ class QuotasErrorHandler(VaspErrorHandler):
         vi = VaspInput.from_directory(".")
 
         # If we encounter a DAV Sub-Space-Matrix error
-        if "subspacematrix" in self.errors:
+        if "subspacematrix" or "edddav" in self.errors:
             # Switch to the CG algorithm
             actions.append(
                 {"dict": "INCAR", "action": {"_set": {"ALGO": "All"}}}
