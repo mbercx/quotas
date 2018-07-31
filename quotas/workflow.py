@@ -126,6 +126,9 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal,
             length of that lattice vector.
     """
 
+    # TODO add checks
+    # Currently the workflow will be submitted even if the file doesn't exist!
+
     current_dir = os.getcwd()
 
     # Set up the geometry optimization from the structure file. All input is
@@ -328,6 +331,7 @@ class QuotasErrorHandler(VaspErrorHandler):
     calculations.
 
     """
+
     error_msgs = {
         "subspacematrix": ["WARNING: Sub-Space-Matrix is not hermitian in "
                            "DAV"],
