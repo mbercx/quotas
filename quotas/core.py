@@ -471,9 +471,8 @@ class WorkFunctionData(MSONable):
 
         """
 
-        return cls.__init__(Poscar.from_dict(d["poscar"]),
-                            d["locpot_along_c"],
-                            d["efermi"])
+        return cls(Poscar.from_dict(d["poscar"]), d["locpot_along_c"],
+                   d["efermi"])
 
 class WorkFunctionAnalyzer(MSONable):
     """
