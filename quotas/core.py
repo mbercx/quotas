@@ -6,6 +6,7 @@ import numpy as np
 import copy
 import string
 import sys
+import json
 
 from pymatgen.core import Structure
 from pymatgen.core.surface import SlabGenerator
@@ -14,7 +15,7 @@ from pymatgen.io.vasp.inputs import Poscar
 from pymatgen.io.vasp.outputs import Outcar, Locpot
 from pymatgen.util.plotting import pretty_plot
 
-from monty.json import MSONable
+from monty.json import MSONable, MontyDecoder, MontyEncoder
 
 """
 A set of methods to aid in the setup of slab calculations. 
@@ -434,17 +435,6 @@ class WorkFunctionData(MSONable):
 
         return plt
 
-    @staticmethod
-    def from_files(poscar_filename, locpot_filename, outcar_filename, shift=0):
-        poscar = Poscar.from_file(poscar_filename)
-        locpot = Locpot.from_file(locpot_filename)
-        outcar = Outcar(outcar_filename)
-
-        wf = WorkFunctionAnalyzer(poscar, locpot, outcar, shift=shift)
-
-        return WorkFunctionData(poscar, np.array(wf.locpot_along_c),
-                                wf.efermi, shift=shift)
-
     def as_dict(self):
         """
 
@@ -473,6 +463,45 @@ class WorkFunctionData(MSONable):
 
         return cls(Poscar.from_dict(d["poscar"]), d["locpot_along_c"],
                    d["efermi"])
+
+    @classmethod
+    def from_output(cls, poscar_filename, locpot_filename, outcar_filename,
+                    shift=0):
+        poscar = Poscar.from_file(poscar_filename)
+        locpot = Locpot.from_file(locpot_filename)
+        outcar = Outcar(outcar_filename)
+
+        wf = WorkFunctionAnalyzer(poscar, locpot, outcar, shift=shift)
+
+        return cls(poscar, np.array(wf.locpot_along_c), wf.efermi,
+                   shift=shift)
+
+    @classmethod
+    def from_file(cls, filename):
+        """
+
+        Args:
+            filename:
+
+        Returns:
+
+        """
+        with open(filename, "r") as file:
+            cls.from_dict(json.load(file.read(), cls=MontyDecoder))
+
+
+    def to(self, filename):
+        """
+
+        Args:
+            filename:
+
+        Returns:
+
+        """
+        with open(filename, "w") as file:
+            json.dump(self.as_dict(), file, cls=MontyEncoder)
+
 
 class WorkFunctionAnalyzer(MSONable):
     """
