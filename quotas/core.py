@@ -460,6 +460,7 @@ class WorkFunctionData(MSONable):
 
         return d
 
+    @classmethod
     def from_dict(cls, d):
         """
 
