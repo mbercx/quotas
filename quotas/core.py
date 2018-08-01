@@ -487,7 +487,7 @@ class WorkFunctionData(MSONable):
 
         """
         with open(filename, "r") as file:
-            cls.from_dict(json.load(file, cls=MontyDecoder))
+            return json.load(file, cls=MontyDecoder)
 
 
     def to(self, filename):
