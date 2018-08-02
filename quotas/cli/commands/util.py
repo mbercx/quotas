@@ -4,6 +4,8 @@
 
 import os
 
+from quotas.core import WorkFunctionData
+
 from quotas.core import find_irr_kpoints, find_suitable_kpar
 from pymatgen.core import Structure
 from pymatgen.io.vasp.outputs import Vasprun, UnconvergedVASPWarning
@@ -92,6 +94,26 @@ def check_run(directory):
         print("No vasprun.xml found in run directory.")
     except UnconvergedVASPWarning:
         print("Calculation has not converged successfully.")
+
+
+def process_output(directory, calculation="dos"):
+    """
+
+
+    Args:
+        directory:
+
+    Returns:
+
+    """
+
+    wf = WorkFunctionData.from_output(
+        poscar_filename=os.path.join(directory, "POSCAR"),
+        locpot_filename=os.path.join(directory, "LOCPOT"),
+        outcar_filename=os.path.join(directory, "OUTCAR")
+    )
+
+    wf.to("wf_data.json")
 
 
 
