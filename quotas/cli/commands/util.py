@@ -113,7 +113,7 @@ def process_output(directory, calculation="dos"):
         outcar_filename=os.path.join(directory, "OUTCAR")
     )
 
-    wf.to(os.path.join("wf_data.json"))
+    wf.to(os.path.join(directory, "wf_data.json"))
 
 
 
