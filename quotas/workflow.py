@@ -35,8 +35,10 @@ __date__ = "Apr 2018"
 TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                             "templates")
 VASP_RUN_SCRIPT = "/user/antwerpen/202/vsc20248/local/scripts/job_workflow.sh"
-VASP_RUN_COMMAND = "bash /user/antwerpen/202/vsc20248/local/scripts" \
-                   "/job_workflow.sh"
+#VASP_RUN_COMMAND = "bash /user/antwerpen/202/vsc20248/local/scripts" \
+#                   "/job_workflow.sh"
+
+VASP_RUN_COMMAND = "mpirun -genv LD_BIND_NOW=1 vasp_std >> out 2>&1"
 
 # Set up the Launchpad for the workflows
 LAUNCHPAD = LaunchPad(host="ds135179.mlab.com", port=35179, name="quotas",
