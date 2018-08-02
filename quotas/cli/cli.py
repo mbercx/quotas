@@ -248,6 +248,17 @@ def nkp(directory):
     nkp(directory=directory)
 
 
+@util.command(context_settings=CONTEXT_SETTINGS)
+@click.option("--directory", "-d", default=".")
+def process(directory):
+    """
+    Process the data into a .json file.
+    """
+    from quotas.cli.commands.util import process_output
+
+    process_output(directory=directory)
+
+
 @main.group(context_settings=CONTEXT_SETTINGS)
 def workflow():
     """
