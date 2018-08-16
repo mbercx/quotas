@@ -136,7 +136,8 @@ def relax(bulk_file, is_metal, hse_calc, verbose):
 
 @bulk.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("relax_dir", nargs=1)
-@click.option("--k_product", "-k", default=80)
+@click.option("--k_product", "-k", default=80,
+              help="HELP")
 @click.option("--hse_calc", "-H", is_flag=True)
 def dos(relax_dir, k_product, hse_calc):
     """

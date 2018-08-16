@@ -1,6 +1,6 @@
 # PBE+U calculations used for the relaxation of a slab.
 INCAR:
-  ALGO: Normal
+  ALGO: All
   AMIN: 0.01
   AMIX: 0.2
   BMIX: 0.001
