@@ -288,7 +288,7 @@ def dos(relax_dir, k_product, hse_calc=False):
             postprocess=int)
 
         # Include a significant number of empty bands
-        nbands = relax_outcar.data['nbands'][0][0] * 4
+        nbands = relax_outcar.data['nbands'][0][0] * 3
 
     # Add some typical extra settings for the DOS calculation
     dos_incar = {"NEDOS": 2000, "NBANDS": nbands}
