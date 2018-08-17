@@ -13,7 +13,7 @@ from monty.serialization import loadfn
 
 from pymatgen.core.structure import Structure
 from pymatgen.core.surface import SlabGenerator
-from pymatgen.io.vasp.outputs import Vasprun
+from pymatgen.io.vasp.outputs import Vasprun, Outcar
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 """
@@ -37,8 +37,11 @@ def _load_yaml_config(filename):
     config = loadfn(os.path.join(MODULE_DIR, "%s.yaml" % filename))
     return config
 
+
 # Parameters
 MAX_KPAR = 30
+
+
 # TODO Find way to make potential setting more user friendly
 
 
@@ -85,7 +88,7 @@ def setup(bulk_file, miller_indices, thickness, vacuum, write_cif, verbose):
                   "sites.")
 
         bulk_structure.add_site_property("magmom",
-                                         [0]*len(bulk_structure.sites))
+                                         [0] * len(bulk_structure.sites))
 
     if verbose:
         print("Generating slab terminations...")
@@ -119,9 +122,9 @@ def setup(bulk_file, miller_indices, thickness, vacuum, write_cif, verbose):
         slab_letter_counter += 1
 
         slab_file = bulk_structure.composition.reduced_formula + "_" \
-            + "".join([str(number) for number in miller_indices]) \
-            + "_" + slab_letter + "_" + str(n_atomic_layers) + "l" \
-            + str(int(vacuum)) + "v"
+                    + "".join([str(number) for number in miller_indices]) \
+                    + "_" + slab_letter + "_" + str(n_atomic_layers) + "l" \
+                    + str(int(vacuum)) + "v"
 
         # Add an extra tag to the name in case the slab is polar
         if slab.is_polar():
@@ -138,7 +141,7 @@ def setup(bulk_file, miller_indices, thickness, vacuum, write_cif, verbose):
         slab_structure = Structure(slab.lattice, slab.species,
                                    slab.frac_coords,
                                    site_properties=slab.site_properties)
-        slab_structure.to(fmt="json", filename=slab_file+".json")
+        slab_structure.to(fmt="json", filename=slab_file + ".json")
 
         if write_cif:
             slab_structure.to(fmt="cif", filename=slab_file + ".cif")
@@ -182,8 +185,8 @@ def relax(structure_file, fix_part, fix_thickness, is_metal=False,
     if is_metal:
 
         geo_optimization = slabRelaxSet(slab_structure,
-                                        user_incar_settings={"ISMEAR":1,
-                                                             "SIGMA":0.2},
+                                        user_incar_settings={"ISMEAR": 1,
+                                                             "SIGMA": 0.2},
                                         potcar_functional=DFT_FUNCTIONAL)
         geo_optimization.fix_slab_bulk(thickness=fix_thickness,
                                        part=fix_part)
@@ -269,13 +272,26 @@ def dos(relax_dir, k_product, hse_calc=False):
     """
     relax_dir = os.path.abspath(relax_dir)
 
-    relax_out = Vasprun(os.path.join(relax_dir, "vasprun.xml"))
+    try:
+        relax_vasprun = Vasprun(os.path.join(relax_dir, "vasprun.xml"))
 
-    # Triple the amount of bands compared to the minimum
-    nbands = relax_out.parameters["NBANDS"]*3
+        # Triple the amount of bands compared to the minimum
+        nbands = relax_vasprun.parameters["NBANDS"] * 3
+
+    except FileNotFoundError:
+        relax_outcar = Outcar(os.path.join(relax_dir, "OUTCAR"))
+
+        relax_outcar.read_pattern(
+            {"nbands":  r"\s+k-points\s+NKPTS =\s+[0123456789]+\s+k-points "
+                        r"in BZ\s+NKDIM =\s+[0123456789]+\s+number of "
+                        r"bands\s+NBANDS=\s+([\.\-\d]+)"},
+            postprocess=int)
+
+        # Include a significant number of empty bands
+        nbands = relax_outcar.data['nbands'][0][0] * 4
 
     # Add some typical extra settings for the DOS calculation
-    dos_incar = {"NEDOS": 2000, "NBANDS":nbands}
+    dos_incar = {"NEDOS": 2000, "NBANDS": nbands}
 
     if hse_calc:
 
