@@ -188,7 +188,7 @@ def optics(relax_dir, k_product, hse_calc, is_metal, verbose):
     if is_metal:
 
         if verbose:
-            print("Metal option detected. Adding good amount of gaussian "
+            print("Metal option detected. Adding solid amount of gaussian "
                   "smearing.")
 
         user_incar_settings.update({"ISMEAR": 0, "SIGMA": 0.3})
