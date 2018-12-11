@@ -157,9 +157,14 @@ def optics(relax_dir, k_product, hse_calc, is_metal, verbose):
     relax_out = Vasprun(os.path.join(relax_dir, "vasprun.xml"))
 
     nbands = relax_out.parameters["NBANDS"] * 3
+    if is_metal:
+        complex_shift=0.1
+    else:
+        complex_shift=0.01
 
     # Add the INCAR settings for the dielectric function calculation
-    user_incar_settings = {"LOPTICS":True, "NEDOS":2000, "NBANDS": nbands}
+    user_incar_settings = {"LOPTICS":True, "NEDOS":2000, "NBANDS": nbands,
+                           "CSHIFT":complex_shift}
 
     if hse_calc:
 
