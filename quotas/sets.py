@@ -23,7 +23,6 @@ __maintainer__ = "Marnik Bercx"
 __email__ = "marnik.bercx@uantwerpen.be"
 __date__ = "Apr 2018"
 
-
 MODULE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                           "set_configs")
 DFT_FUNCTIONAL = "PBE_54"
@@ -38,6 +37,9 @@ class bulkRelaxSet(DictSet):
     """
     VASP input set for the bulk relaxation.
 
+    I prefer having my own yaml files to modify, instead of relying on those
+    of the pymatgen package and adding incar_settings.
+
     """
     CONFIG = _load_yaml_config("bulkRelaxSet")
 
@@ -48,7 +50,6 @@ class bulkRelaxSet(DictSet):
 
 
 class bulkSCFSet(DictSet):
-
     CONFIG = _load_yaml_config("bulkSCFSet")
 
     def __init__(self, structure, k_product, **kwargs):
@@ -60,22 +61,23 @@ class bulkSCFSet(DictSet):
     @property
     def kpoints(self):
         """
-        Sets up the k-points for the slab relaxation.
+        Set up the k-points for the bulk SCF.
 
-        For slabs, the number of
-        k-points corresponding to the third reciprocal lattice vector is set
-        to 1. The number of k-point divisions in the other two directions is
-        determined by the length of the corresponding lattice vector, by making
-        sure the product of the number of k-points and the length of the
+        The number of k-point divisions in each direction is determined by
+        the length of the corresponding lattice vector, by making sure the
+        product of the number of k-points and the length of the
         corresponding lattice vector is equal to k_product, defined in the
-        initialization of the slab calculation.
+        initialization of the SCF calculation.
+
+        This means that in order to get a k-point spacing of ~0.05
+        angstrom^{-1} along the reciprocal lattice vectors, you need to put
+        the k_product equal to 20.
 
         Returns:
             :class: pymatgen.io.vasp.inputs.Kpoints
 
         """
-
-        # Use k_product to calculate kpoints
+        # Use k_product to set up kpoints array
         abc = self.structure.lattice.abc
         kpt_calc = [int(self.k_product / abc[0] + 0.5),
                     int(self.k_product / abc[1] + 0.5),
@@ -88,7 +90,7 @@ class bulkSCFSet(DictSet):
     @staticmethod
     def from_relax_calc(relax_dir, k_product, **kwargs):
         """
-        Set up the calculation based on the output of the geometry
+        Set up the SCF calculation based on the output of the geometry
         optimization.
 
         """
@@ -109,7 +111,7 @@ class bulkSCFSet(DictSet):
             magmom = incar["MAGMOM"]
         except KeyError:
             # If no magnetic moment is present, set it to zero
-            magmom = [0]*len(structure.sites)
+            magmom = [0] * len(structure.sites)
 
         structure.add_site_property("magmom", magmom)
 
@@ -198,12 +200,13 @@ class slabRelaxSet(DictSet):
 
         # Use k_product to calculate kpoints
         abc = self.structure.lattice.abc
-        kpt_calc = [int(self.k_product/abc[0]+0.5),
-                    int(self.k_product/abc[1]+0.5), 1]
+        kpt_calc = [int(self.k_product / abc[0] + 0.5),
+                    int(self.k_product / abc[1] + 0.5), 1]
 
         kpoints = Kpoints.gamma_automatic(kpts=kpt_calc)
 
         return kpoints
+
 
 class slabWorkFunctionSet(DictSet):
     """
@@ -256,7 +259,7 @@ class slabWorkFunctionSet(DictSet):
         """
         relax_dir = os.path.abspath(relax_dir)
 
-        #TODO this can be made more general
+        # TODO this can be made more general
         # Obtain the structure from the CONTCAR file of the VASP calculation
         try:
             structure = Structure.from_file(os.path.join(relax_dir, "CONTCAR"))
@@ -268,12 +271,13 @@ class slabWorkFunctionSet(DictSet):
         # geometry optimization
         incar = Incar.from_file(os.path.join(relax_dir, "INCAR"))
         magmom = incar["MAGMOM"]
-        structure.add_site_property("magmom",magmom)
+        structure.add_site_property("magmom", magmom)
 
         return slabWorkFunctionSet(structure=structure,
                                    k_product=k_product,
                                    potcar_functional=DFT_FUNCTIONAL,
                                    **kwargs)
+
 
 class slabWorkFunctionHSESet(DictSet):
     """
@@ -344,4 +348,3 @@ class slabWorkFunctionHSESet(DictSet):
                                       k_product=k_product,
                                       potcar_functional=DFT_FUNCTIONAL,
                                       **kwargs)
-

@@ -273,12 +273,14 @@ def dos(relax_dir, k_product, hse_calc=False):
     relax_dir = os.path.abspath(relax_dir)
 
     try:
+        # Try reading the vasprun.xml file
         relax_vasprun = Vasprun(os.path.join(relax_dir, "vasprun.xml"))
 
         # Triple the amount of bands compared to the minimum
         nbands = relax_vasprun.parameters["NBANDS"] * 3
 
     except FileNotFoundError:
+        # In case this file is not present, try the OUTCAR file.
         relax_outcar = Outcar(os.path.join(relax_dir, "OUTCAR"))
 
         relax_outcar.read_pattern(
