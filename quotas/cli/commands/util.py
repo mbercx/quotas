@@ -2,7 +2,11 @@
 # Copyright (c) Marnik Bercx, University of Antwerp
 # Distributed under the terms of the MIT License
 
+import pdb
+
 import os
+
+from numpy.random import choice
 
 from quotas.core import WorkFunctionData
 
@@ -115,7 +119,49 @@ def process_output(directory, calculation="dos"):
 
     wf.to(os.path.join(directory, "wf_data.json"))
 
+def generate_alloy(root_structure_file, alloy_element, mixing_ratio,
+                   number_random):
+    """
 
+    Args:
+        root_structure:
+        alloy_element:
+        mixing_ratio:
+        number_random:
 
+    Returns:
 
+    """
 
+    alloy = Structure.from_file(root_structure_file)
+
+    random_list = []
+
+    # Make a list of random combinations of site indices
+    while len(random_list) < number_random:
+
+        random_indices = list(choice(
+            list(range(len(alloy))), round(len(alloy) * mixing_ratio), False
+        ))
+
+        if random_indices not in random_list:
+            random_list.append(random_indices)
+
+    # Get the current working directory
+    directory = os.getcwd()
+
+    # Set up the list of random structures
+    for i, index_list in zip(range(len(random_list)), random_list):
+
+        random_structure = alloy.copy()
+
+        for site_index in index_list:
+            random_structure.replace(site_index, alloy_element)
+
+        filename = os.path.basename(root_structure_file).strip(
+            ".json").strip(".cif") + "_rand" + str(i) + ".cif"
+
+        random_structure.sort()
+        random_structure.to(
+            fmt="cif", filename=os.path.join(directory, filename)
+        )
