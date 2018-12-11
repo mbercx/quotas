@@ -260,6 +260,23 @@ def process(directory):
     process_output(directory=directory)
 
 
+@util.command(context_settings=CONTEXT_SETTINGS)
+@click.argument("alloy_element", nargs=1)
+@click.argument("structure_file", nargs=1)
+@click.option("--mixing_ratio", "-M", default=0.5)
+@click.option("--number_random", "-N", default=10)
+def alloy(alloy_element, structure_file, mixing_ratio, number_random):
+    """
+    Set up a bunch of random structures to study allows.
+    """
+    from quotas.cli.commands.util import generate_alloy
+
+    generate_alloy(root_structure_file=structure_file,
+                   alloy_element=alloy_element,
+                   mixing_ratio=mixing_ratio,
+                   number_random=number_random)
+
+
 @main.group(context_settings=CONTEXT_SETTINGS)
 def workflow():
     """
