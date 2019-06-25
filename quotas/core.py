@@ -74,21 +74,20 @@ class QSlab(Slab):
                      coords_are_cartesian=False,
                      site_properties=slab.site_properties, energy=slab.energy)
 
-    def find_atomic_layers(self, layer_tol=1e-2):
+    def find_atomic_layers(self, layer_tol=2e-2):
         """
-            Determines the atomic layers in the c-direction of a structure. Usually
-            used to calculate the number of atomic layers in a slab. Note that as long
-            as a site is "close enough" to ONE other site of a layer (determined by the
-            'layer_tol' variable), it will be added to that layer. Another option would
-            be to demand that the distance is smaller than 'layer_tol' for ALL sites of
-            the layer, but then the division in layers could depend on the order of the
-            sites.
+            Determines the atomic layers in the c-direction of the slab. Note that as
+            long as a site is "close enough" to ONE other site of a layer (determined
+            by the 'layer_tol' variable), it will be added to that layer.
+
+            Another option would be to demand that the distance is smaller than
+            'layer_tol' for ALL sites of the layer, but then the division in layers
+            could depend on the order of the sites.
 
             Args:
-                structure (pymatgen.core.structure.Structure): Structure for which to
-                    analyze the layers.
-                layer_tol (float): Tolerance for the difference between the third
-                    fractional coordinate of two sites in the same layer.
+                layer_tol (float): Tolerance for the maximum distance (in
+                    angstrom) between layers for them to still correspond to the same
+                    layer.
 
             Returns:
                 (list) List of the atomic layers, sorted by their position in the c-direction.
@@ -96,6 +95,12 @@ class QSlab(Slab):
             """
 
         atomic_layers = []
+
+        # Get a unit vector perpendicular to the layers (i.e. the a and b lattice vector)
+        m = self.lattice.matrix
+        u = np.cross(m[0, :], m[1, :])
+        u /= np.linalg.norm(u)
+        c_proj = np.dot(u, m[2, :])
 
         for site in self.sites:
 
@@ -107,8 +112,12 @@ class QSlab(Slab):
                 # Compare the third fractional coordinate of the site with that of
                 # the atoms in the considered layer
                 for atom_site in layer.copy():
-                    frac_dist = abs(atom_site.frac_coords[2] - site.frac_coords[2])
-                    if frac_dist < layer_tol or abs(frac_dist - 1.0) < layer_tol:
+
+                    distance = abs(atom_site.frac_coords[2] - site.frac_coords[2]) * \
+                               c_proj
+
+                    if distance < layer_tol or abs(distance - c_proj) < layer_tol:
+
                         is_in_layer = True
                         layer.append(site)
                         break  # Break out of the loop, else the site is added
