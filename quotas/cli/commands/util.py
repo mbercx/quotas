@@ -2,8 +2,6 @@
 # Copyright (c) Marnik Bercx, University of Antwerp
 # Distributed under the terms of the MIT License
 
-import pdb
-
 import os
 
 from numpy.random import choice

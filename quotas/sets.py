@@ -69,7 +69,8 @@ class bulkSCFSet(DictSet):
         corresponding lattice vector is equal to k_product, defined in the
         initialization of the SCF calculation.
 
-        This means that in order to get a k-point spacing of ~0.05
+        This means that in order to get a k-
+        point spacing of ~0.05
         angstrom^{-1} along the reciprocal lattice vectors, you need to put
         the k_product equal to 20.
 

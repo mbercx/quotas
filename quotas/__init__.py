@@ -3,7 +3,7 @@
 # Distributed under the terms of the MIT License
 
 import os
-import yaml
+import ruamel.yaml as yaml
 
 """
 This __init__.py file is mainly used to set up the package wide config.

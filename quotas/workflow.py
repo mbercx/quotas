@@ -35,7 +35,7 @@ __date__ = "Apr 2018"
 TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                             "templates")
 VASP_RUN_SCRIPT = "/user/antwerpen/202/vsc20248/local/scripts/job_workflow.sh"
-#VASP_RUN_COMMAND = "bash /user/antwerpen/202/vsc20248/local/scripts" \
+# VASP_RUN_COMMAND = "bash /user/antwerpen/202/vsc20248/local/scripts" \
 #                   "/job_workflow.sh"
 
 VASP_RUN_COMMAND = "mpirun -genv LD_BIND_NOW=1 vasp_std >> out 2>&1"
@@ -43,6 +43,7 @@ VASP_RUN_COMMAND = "mpirun -genv LD_BIND_NOW=1 vasp_std >> out 2>&1"
 # Set up the Launchpad for the workflows
 LAUNCHPAD = LaunchPad(host="ds135179.mlab.com", port=35179, name="quotas",
                       username="mbercx", password="quotastests")
+
 
 def run_vasp(directory):
     """
@@ -170,11 +171,11 @@ def dos_workflow(structure_file, fix_part, fix_thickness, is_metal,
     if in_custodian:
         # Run the VASP calculation within a Custodian
         run_dos = PyTask(func="quotas.workflow.run_custodian",
-                           inputs=["dos_dir"])
+                         inputs=["dos_dir"])
     else:
         # Run the VASP calculation
         run_dos = PyTask(func="quotas.workflow.run_vasp",
-                           inputs=["dos_dir"])
+                         inputs=["dos_dir"])
 
     dos_firework = Firework(tasks=[setup_dos, run_dos],
                             name="DOS calculation")
@@ -242,11 +243,11 @@ def bulk_optics_workflow(structure_file, is_metal, hse_calc, k_product,
     if in_custodian:
         # Run the VASP calculation within a Custodian
         run_optics = PyTask(func="quotas.workflow.run_custodian",
-                           inputs=["optics_dir"])
+                            inputs=["optics_dir"])
     else:
         # Run the VASP calculation
         run_optics = PyTask(func="quotas.workflow.run_vasp",
-                           inputs=["optics_dir"])
+                            inputs=["optics_dir"])
 
     optics_firework = Firework(tasks=[setup_optics, run_optics],
                                name="Optics calculation")
@@ -328,6 +329,7 @@ def test_custodian(structure_file, fix_part, fix_thickness, is_metal,
 VASP_BACKUP_FILES = {"INCAR", "KPOINTS", "POSCAR", "OUTCAR", "CONTCAR",
                      "OSZICAR", "vasprun.xml", "vasp.out", "std_err.txt"}
 
+
 class QuotasErrorHandler(VaspErrorHandler):
     """
     Overwritten error handler for the issues we encounter often in slab
@@ -372,9 +374,9 @@ class QuotasErrorHandler(VaspErrorHandler):
                 ```
         """
         super(QuotasErrorHandler, self).__init__(output_filename=output_filename,
-                                      natoms_large_cell=natoms_large_cell)
+                                                 natoms_large_cell=natoms_large_cell)
         self.errors_subset_to_catch = errors_subset_to_catch or \
-            list(QuotasErrorHandler.error_msgs.keys())
+                                      list(QuotasErrorHandler.error_msgs.keys())
 
     def correct(self):
         backup(VASP_BACKUP_FILES | {self.output_filename})
