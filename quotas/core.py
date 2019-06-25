@@ -9,7 +9,7 @@ import sys
 import json
 
 from pymatgen.core import Structure
-from pymatgen.core.surface import SlabGenerator
+from pymatgen.core.surface import SlabGenerator, Slab
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.vasp.inputs import Poscar
 from pymatgen.io.vasp.outputs import Outcar, Locpot
@@ -28,6 +28,101 @@ __version__ = "0.2"
 __maintainer__ = "Marnik Bercx"
 __email__ = "marnik.bercx@uantwerpen.be"
 __date__ = "Apr 2018"
+
+
+class QSlab(Slab):
+    """
+    A Quotas version of the pymatgen.core.surface.Slab object. All methods can be
+    inherited, but we need to add some convenience methods of our own.
+
+    """
+
+    def __init__(self, lattice, species, coords, miller_index,
+                 oriented_unit_cell, shift, scale_factor, reorient_lattice=True,
+                 validate_proximity=False, to_unit_cell=False,
+                 reconstruction=None, coords_are_cartesian=False,
+                 site_properties=None, energy=None):
+        super(QSlab, self).__init__(lattice, species, coords, miller_index,
+                                    oriented_unit_cell, shift, scale_factor,
+                                    reorient_lattice, validate_proximity, to_unit_cell,
+                                    reconstruction, coords_are_cartesian,
+                                    site_properties, energy)
+
+    @classmethod
+    def from_file(cls, filename, primitive=False, sort=False, merge_tol=0.0):
+        """
+        Load the QSlab from a file.
+
+        Args:
+            filename (str):
+            primitive (bool):
+            sort (bool):
+            merge_tol (float):
+
+        Returns:
+
+        """
+        pass
+
+    @classmethod
+    def from_slab(cls, slab):
+        return QSlab(lattice=slab.lattice, species=slab.species, coords=slab.frac_coords,
+                     miller_index=slab.miller_index,
+                     oriented_unit_cell=slab.oriented_unit_cell, shift=slab.shift,
+                     scale_factor=slab.scale_factor,
+                     reconstruction=slab.reconstruction,
+                     coords_are_cartesian=False,
+                     site_properties=slab.site_properties, energy=slab.energy)
+
+    def find_atomic_layers(self, layer_tol=1e-2):
+        """
+            Determines the atomic layers in the c-direction of a structure. Usually
+            used to calculate the number of atomic layers in a slab. Note that as long
+            as a site is "close enough" to ONE other site of a layer (determined by the
+            'layer_tol' variable), it will be added to that layer. Another option would
+            be to demand that the distance is smaller than 'layer_tol' for ALL sites of
+            the layer, but then the division in layers could depend on the order of the
+            sites.
+
+            Args:
+                structure (pymatgen.core.structure.Structure): Structure for which to
+                    analyze the layers.
+                layer_tol (float): Tolerance for the difference between the third
+                    fractional coordinate of two sites in the same layer.
+
+            Returns:
+                (list) List of the atomic layers, sorted by their position in the c-direction.
+                Each atomic layer is also represented by a list of sites.
+            """
+
+        atomic_layers = []
+
+        for site in self.sites:
+
+            is_in_layer = False
+
+            # Check to see if the site is in a layer that is already in our list
+            for layer in atomic_layers:
+
+                # Compare the third fractional coordinate of the site with that of
+                # the atoms in the considered layer
+                for atom_site in layer.copy():
+                    frac_dist = abs(atom_site.frac_coords[2] - site.frac_coords[2])
+                    if frac_dist < layer_tol or abs(frac_dist - 1.0) < layer_tol:
+                        is_in_layer = True
+                        layer.append(site)
+                        break  # Break out of the loop, else the site is added
+                        # multiple times
+
+            # If the site is not found in any of the atomic layers, create a new
+            # atomic layer
+            if not is_in_layer:
+                atomic_layers.append([site, ])
+
+        # Sort the atomic layers
+        atomic_layers.sort(key=lambda layer: layer[0].frac_coords[2])
+
+        return atomic_layers
 
 
 def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
@@ -280,6 +375,7 @@ class WorkFunctionData(MSONable):
     the dataserver.
 
     """
+
     def __init__(self, poscar, locpot_along_c, efermi, shift=0):
         """
         Initializes the WorkFunctionData class.
@@ -362,7 +458,7 @@ class WorkFunctionData(MSONable):
             # average signal is just the bulk-like potential when in the slab region
             if p < self.ave_bulk_p \
                     or self.sorted_sites[-1].frac_coords[2] >= self.along_c[i] \
-                            >= self.sorted_sites[0].frac_coords[2]:
+                    >= self.sorted_sites[0].frac_coords[2]:
                 yg.append(self.ave_bulk_p)
                 xg.append(self.along_c[i])
             else:
@@ -488,7 +584,6 @@ class WorkFunctionData(MSONable):
         """
         with open(filename, "r") as file:
             return json.load(file, cls=MontyDecoder)
-
 
     def to(self, filename):
         """
@@ -639,7 +734,7 @@ class WorkFunctionAnalyzer(MSONable):
             # average signal is just the bulk-like potential when in the slab region
             if p < self.ave_bulk_p \
                     or self.sorted_sites[-1].frac_coords[2] >= self.along_c[i] \
-                            >= self.sorted_sites[0].frac_coords[2]:
+                    >= self.sorted_sites[0].frac_coords[2]:
                 yg.append(self.ave_bulk_p)
                 xg.append(self.along_c[i])
             else:
