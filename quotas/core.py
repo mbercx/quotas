@@ -3,12 +3,14 @@
 # Distributed under the terms of the MIT License
 
 import numpy as np
+import os
 import copy
 import string
 import sys
 import json
 
-from pymatgen.core import Structure
+from fnmatch import fnmatch
+from pymatgen.core import Structure, Lattice, PeriodicSite
 from pymatgen.core.surface import SlabGenerator, Slab
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.vasp.inputs import Poscar
@@ -16,6 +18,7 @@ from pymatgen.io.vasp.outputs import Outcar, Locpot
 from pymatgen.util.plotting import pretty_plot
 
 from monty.json import MSONable, MontyDecoder, MontyEncoder
+from monty.io import zopen
 
 """
 A set of methods to aid in the setup of slab calculations. 
@@ -54,7 +57,7 @@ class QSlab(Slab):
         Load the QSlab from a file.
 
         Args:
-            filename (str):
+            filename (str): Path to file that contains the details of the slab.
             primitive (bool):
             sort (bool):
             merge_tol (float):
@@ -62,7 +65,37 @@ class QSlab(Slab):
         Returns:
 
         """
-        pass
+        if fnmatch(os.path.basename(filename).lower(), "*.json"):
+            with zopen(filename, "r") as file:
+                return cls.from_str(file.read())
+        else:
+            raise NotImplementedError("Only .json files are currently supported.")
+
+    @classmethod
+    def from_str(cls, input_string, fmt="json", primitive=False, sort=False,
+                 merge_tol=0.0):
+
+        if fmt == "json":
+            return QSlab.from_slab(json.loads(input_string, cls=MontyDecoder))
+        else:
+            raise NotImplementedError("Currently only the json format is supported.")
+
+    def to(self, fmt=None, filename=None, **kwargs):
+        """
+        Write the QSlab to a file.
+
+        Args:
+            fmt:
+            filename:
+
+        Returns:
+
+        """
+        if fmt == "json":
+            with open(filename, "w") as file:
+                file.write(self.to_json())
+        else:
+            super(QSlab, self).to(fmt, filename, **kwargs)
 
     @classmethod
     def from_slab(cls, slab):
@@ -117,7 +150,6 @@ class QSlab(Slab):
                                c_proj
 
                     if distance < layer_tol or abs(distance - c_proj) < layer_tol:
-
                         is_in_layer = True
                         layer.append(site)
                         break  # Break out of the loop, else the site is added
@@ -159,12 +191,14 @@ def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
 
                 "center" (default): Fix the atoms at the center of the slab.
 
-
     Returns:
         selective dynamics (Nx3 array): bool values for selective dynamics,
             where N is number of sites. Defaults to None.
 
     """
+    # TODO : This class has been moved elsewhere. Maybe I should remove it here,
+    #  or it could be useful for others...
+
     if method == "layers":
 
         atomic_layers = find_atomic_layers(poscar.structure)
@@ -226,57 +260,6 @@ def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
     else:
         raise NotImplementedError("Requested method is not implemented (yet).")
         # TODO Implement angstrom
-
-
-def find_atomic_layers(structure, layer_tol=1e-2):
-    """
-    Determines the atomic layers in the c-direction of a structure. Usually
-    used to calculate the number of atomic layers in a slab. Note that as long
-    as a site is "close enough" to ONE other site of a layer (determined by the
-    'layer_tol' variable), it will be added to that layer. Another option would
-    be to demand that the distance is smaller than 'layer_tol' for ALL sites of
-    the layer, but then the division in layers could depend on the order of the
-    sites.
-
-    Args:
-        structure (pymatgen.core.structure.Structure): Structure for which to
-            analyze the layers.
-        layer_tol (float): Tolerance for the difference between the third
-            fractional coordinate of two sites in the same layer.
-
-    Returns:
-        (list) List of the atomic layers, sorted by their position in the c-direction.
-        Each atomic layer is also represented by a list of sites.
-    """
-
-    atomic_layers = []
-
-    for site in structure.sites:
-
-        is_in_layer = False
-
-        # Check to see if the site is in a layer that is already in our list
-        for layer in atomic_layers:
-
-            # Compare the third fractional coordinate of the site with that of
-            # the atoms in the considered layer
-            for atom_site in layer.copy():
-                frac_dist = abs(atom_site.frac_coords[2] - site.frac_coords[2])
-                if frac_dist < layer_tol or abs(frac_dist - 1.0) < layer_tol:
-                    is_in_layer = True
-                    layer.append(site)
-                    break  # Break out of the loop, else the site is added
-                    # multiple times
-
-        # If the site is not found in any of the atomic layers, create a new
-        # atomic layer
-        if is_in_layer == False:
-            atomic_layers.append([site, ])
-
-    # Sort the atomic layers
-    atomic_layers.sort(key=lambda layer: layer[0].frac_coords[2])
-
-    return atomic_layers
 
 
 def write_all_slab_terminations(structure, miller_indices, min_slab_size,
