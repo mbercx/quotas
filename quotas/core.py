@@ -10,6 +10,7 @@ import sys
 import json
 
 from fnmatch import fnmatch
+from pymatgen import Lattice, PeriodicSite, Structure
 from pymatgen.core.surface import SlabGenerator, Slab
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.vasp.inputs import Poscar
@@ -70,6 +71,34 @@ class QSlab(Slab):
         else:
             raise NotImplementedError("Only .json files are currently supported.")
 
+    def as_dict(self):
+        d = super(Slab, self).as_dict()
+        d["@module"] = self.__class__.__module__
+        d["@class"] = self.__class__.__name__
+        d["oriented_unit_cell"] = self.oriented_unit_cell.as_dict()
+        d["miller_index"] = self.miller_index
+        d["shift"] = self.shift
+        d["scale_factor"] = MontyEncoder().default(self.scale_factor)
+        d["reconstruction"] = self.reconstruction
+        d["energy"] = self.energy
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        lattice = Lattice.from_dict(d["lattice"])
+        sites = [PeriodicSite.from_dict(sd, lattice) for sd in d["sites"]]
+        s = Structure.from_sites(sites)
+
+        return cls(
+            lattice=lattice,
+            species=s.species_and_occu, coords=s.frac_coords,
+            miller_index=d["miller_index"],
+            oriented_unit_cell=Structure.from_dict(d["oriented_unit_cell"]),
+            shift=d["shift"],
+            scale_factor=MontyDecoder().process_decoded(d["scale_factor"]),
+            site_properties=s.site_properties, energy=d["energy"]
+        )
+
     @classmethod
     def from_str(cls, input_string, fmt="json", primitive=False, sort=False,
                  merge_tol=0.0):
@@ -98,13 +127,15 @@ class QSlab(Slab):
 
     @classmethod
     def from_slab(cls, slab):
-        return QSlab(lattice=slab.lattice, species=slab.species, coords=slab.frac_coords,
-                     miller_index=slab.miller_index,
-                     oriented_unit_cell=slab.oriented_unit_cell, shift=slab.shift,
-                     scale_factor=slab.scale_factor,
-                     reconstruction=slab.reconstruction,
-                     coords_are_cartesian=False,
-                     site_properties=slab.site_properties, energy=slab.energy)
+        return cls(lattice=slab.lattice, species=slab.species,
+                   coords=slab.frac_coords,
+                   miller_index=slab.miller_index,
+                   oriented_unit_cell=slab.oriented_unit_cell,
+                   shift=slab.shift,
+                   scale_factor=slab.scale_factor,
+                   reconstruction=slab.reconstruction,
+                   coords_are_cartesian=False,
+                   site_properties=slab.site_properties, energy=slab.energy)
 
     def find_atomic_layers(self, layer_tol=2e-2):
         """
