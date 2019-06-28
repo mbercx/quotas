@@ -10,7 +10,6 @@ import sys
 import json
 
 from fnmatch import fnmatch
-from pymatgen.core import Structure, Lattice, PeriodicSite
 from pymatgen.core.surface import SlabGenerator, Slab
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.vasp.inputs import Poscar

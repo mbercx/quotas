@@ -5,6 +5,9 @@
 import os
 import ruamel.yaml as yaml
 
+# Load core classes for easier import
+from quotas.core import QSlab
+
 """
 This __init__.py file is mainly used to set up the package wide config.
 
@@ -31,3 +34,5 @@ def _load_pmg_settings():
     return d
 
 SETTINGS = _load_pmg_settings()
+
+
