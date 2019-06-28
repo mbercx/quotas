@@ -125,6 +125,57 @@ class QSlab(Slab):
         else:
             super(QSlab, self).to(fmt, filename, **kwargs)
 
+    def get_sorted_structure(self, key=None, reverse=False):
+        """
+        Get a sorted copy of the structure. The parameters have the same
+        meaning as in list.sort. By default, sites are sorted by the
+        electronegativity of the species. Note that Slab has to override this
+        because of the different __init__ args.
+
+        Args:
+            key: Specifies a function of one argument that is used to extract
+                a comparison key from each list element: key=str.lower. The
+                default value is None (compare the elements directly).
+            reverse (bool): If set to True, then the list elements are sorted
+                as if each comparison were reversed.
+        """
+        sites = sorted(self, key=key, reverse=reverse)
+        s = Structure.from_sites(sites)
+        return self.__class__(s.lattice, s.species_and_occu, s.frac_coords,
+                              self.miller_index, self.oriented_unit_cell, self.shift,
+                              self.scale_factor, site_properties=s.site_properties,
+                              reorient_lattice=self.reorient_lattice)
+
+    def copy(self, site_properties=None, sanitize=False):
+        """
+        Convenience method to get a copy of the structure, with options to add
+        site properties.
+
+        Args:
+            site_properties (dict): Properties to add or override. The
+                properties are specified in the same way as the constructor,
+                i.e., as a dict of the form {property: [values]}. The
+                properties should be in the order of the *original* structure
+                if you are performing sanitization.
+            sanitize (bool): If True, this method will return a sanitized
+                structure. Sanitization performs a few things: (i) The sites are
+                sorted by electronegativity, (ii) a LLL lattice reduction is
+                carried out to obtain a relatively orthogonalized cell,
+                (iii) all fractional coords for sites are mapped into the
+                unit cell.
+
+        Returns:
+            A copy of the Structure, with optionally new site_properties and
+            optionally sanitized.
+        """
+        props = self.site_properties
+        if site_properties:
+            props.update(site_properties)
+        return self.__class__(self.lattice, self.species_and_occu, self.frac_coords,
+                              self.miller_index, self.oriented_unit_cell, self.shift,
+                              self.scale_factor, site_properties=props,
+                              reorient_lattice=self.reorient_lattice)
+
     @classmethod
     def from_slab(cls, slab):
         return cls(lattice=slab.lattice, species=slab.species,
