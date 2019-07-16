@@ -260,13 +260,15 @@ class QSlab(Slab):
         """
         new_slab = Structure.from_file(os.path.join(directory, "CONTCAR"))
 
-        if ignore_magmom:
+        if ignore_magmom and "magmom" in self.site_properties.keys():
             new_slab.add_site_property("magmom", self.site_properties["magmom"])
         else:
             out = Outcar(os.path.join(directory, "OUTCAR"))
             if len(out.magnetization) == 0:
-                warnings.warn("Outcar does not contain any magnetic moments! ")
-                new_slab.add_site_property("magmom", self.site_properties["magmom"])
+                if "magmom" in self.site_properties.keys():
+                    warnings.warn("Outcar does not contain any magnetic moments! "
+                                  "Keeping magnetic moments from initial slab.")
+                    new_slab.add_site_property("magmom", self.site_properties["magmom"])
             else:
                 new_slab.add_site_property("magmom",
                                            [site["tot"] for site in out.magnetization])
