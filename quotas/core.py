@@ -258,7 +258,7 @@ class QSlab(Slab):
                 moments of the calculation should be ignored.
 
         """
-        new_slab = QSlab.from_file(os.path.join(directory, "CONTCAR"))
+        new_slab = Structure.from_file(os.path.join(directory, "CONTCAR"))
 
         if ignore_magmom:
             new_slab.add_site_property("magmom", self.site_properties["magmom"])
