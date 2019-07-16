@@ -8,15 +8,15 @@ import copy
 import string
 import sys
 import json
+import warnings
 
 from fnmatch import fnmatch
-from pymatgen import Lattice, PeriodicSite, Structure
+from pymatgen import Lattice, PeriodicSite, Structure, Composition
 from pymatgen.core.surface import SlabGenerator, Slab
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.vasp.inputs import Poscar
 from pymatgen.io.vasp.outputs import Outcar, Locpot
 from pymatgen.util.plotting import pretty_plot
-
 from monty.json import MSONable, MontyDecoder, MontyEncoder
 from monty.io import zopen
 
@@ -245,6 +245,43 @@ class QSlab(Slab):
         atomic_layers.sort(key=lambda layer: layer[0].frac_coords[2])
 
         return atomic_layers
+
+    def update_sites(self, directory, ignore_magmom=False):
+        """
+        Based on the CONTCAR and OUTCAR of a VASP calculation, update the
+        site coordinates and magnetic moments of the slab.
+
+        Args:
+            directory (str): Directory in which the calculation output files (i.e.
+                CONTCAR and OUTCAR) are stored.
+            ignore_magmom (bool): Flag that indicates that the final magnetic
+                moments of the calculation should be ignored.
+
+        """
+        new_slab = QSlab.from_file(os.path.join(directory, "CONTCAR"))
+
+        if ignore_magmom:
+            new_slab.add_site_property("magmom", self.site_properties["magmom"])
+        else:
+            out = Outcar(os.path.join(directory, "OUTCAR"))
+            if len(out.magnetization) == 0:
+                warnings.warn("Outcar does not contain any magnetic moments! ")
+                new_slab.add_site_property("magmom", self.site_properties["magmom"])
+            else:
+                new_slab.add_site_property("magmom",
+                                           [site["tot"] for site in out.magnetization])
+
+        # Update the lattice
+        self._lattice = new_slab.lattice
+
+        # Update the coordinates of the occupied sites.
+        for i, site in enumerate(self):
+            new_site = new_slab.sites[i]
+
+            # Update the site coordinates
+            self.replace(i, species=new_site.species,
+                         coords=new_site.frac_coords,
+                         properties=new_site.properties)
 
 
 def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
