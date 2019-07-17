@@ -68,7 +68,7 @@ def nkp(directory):
 
     input_dir = os.path.abspath(directory)
     structure = Structure.from_file(os.path.join(input_dir, "POSCAR"))
-    incar = Incar.from_file("INCAR")
+    incar = Incar.from_file(os.path.join(directory, "INCAR"))
     if incar.get("MAGMOM", None) is not None:
         structure.add_site_property(("magmom"), incar.get("MAGMOM", None))
     kpoints = Kpoints.from_file(os.path.join(input_dir, "KPOINTS"))
