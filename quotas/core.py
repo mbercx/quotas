@@ -39,7 +39,6 @@ class QSlab(Slab):
     inherited, but we need to add some convenience methods of our own.
 
     """
-
     def __init__(self, lattice, species, coords, miller_index,
                  oriented_unit_cell, shift, scale_factor, reorient_lattice=True,
                  validate_proximity=False, to_unit_cell=False,
@@ -446,9 +445,8 @@ def find_irr_kpoints(structure, kpoints):
     :return:
     """
 
-    spg = SpacegroupAnalyzer(structure)
+    spg = SpacegroupAnalyzer(structure, symprec=1e-5)
 
-    # TODO Find and fix bug!
     return len(spg.get_ir_reciprocal_mesh(kpoints.kpts))
 
 
