@@ -683,6 +683,14 @@ class WorkFunctionData(MSONable):
                    shift=shift)
 
     @classmethod
+    def from_dir(cls, directory):
+        return cls.from_output(
+            poscar_filename=os.path.join(directory, "CONTCAR"),
+            locpot_filename=os.path.join(directory, "LOCPOT"),
+            outcar_filename=os.path.join(directory, "OUTCAR")
+        )
+
+    @classmethod
     def from_file(cls, filename):
         """
 
