@@ -541,6 +541,9 @@ class QuotasCalculator(MSONable):
         Allow for a bulk plasmon excitation event for the excited density of
         electrons.
 
+        Args:
+            excited_density (np.ndarray):
+
         Returns:
 
         """
