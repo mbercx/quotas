@@ -299,8 +299,8 @@ class QuotasCalculator(MSONable):
 
     """
 
-    def __init__(self, total_dos, workfunction_data, dieltensor,
-                 energy_spacing=1e-2):
+    def __init__(self, total_dos, workfunction_data, dieltensor=None,
+                 energy_spacing=1e-2, plasmon_parameters=None):
         """
         Initialize a QuotasCalculator.
 
@@ -323,10 +323,30 @@ class QuotasCalculator(MSONable):
         self.conduction_dos[self.energies < self.total_dos.efermi] = 0
 
         self.escape_function = self.set_up_escape_function()
-        self.bulk_plas_prob, self.surf_plas_prob = \
-            self.set_up_plasmon_probabilities(0.1, 10)
+
+        self._bulk_plas_prob = None
+        self._surf_plas_prob = None
+
+        if dieltensor is not None:
+            plasmon_parameters = plasmon_parameters or {"bulk": 0.1, "surface": 10}
+            self.set_up_plasmon_probabilities(
+                    bulk_parameter=plasmon_parameters["bulk"],
+                    surface_parameter=plasmon_parameters["surface"]
+                )
 
     def set_up_escape_function(self):
+        """
+        Set up the escape function for the secondary electrons.
+
+        TODO: This function should be optimized
+        Right now this function has been largely copied in semantics from its MATLAB
+        counterpart. I believe this can be more efficient.
+
+        Returns:
+            (numpy.ndarray): N-sized vector that represents the probability for
+                an electron with a certain energy to escape.
+
+        """
 
         conduction_energy = self.total_dos.get_cbm_vbm()[1]
         barrier = self.workfunction_data.vacuum_locpot - conduction_energy
@@ -383,7 +403,16 @@ class QuotasCalculator(MSONable):
         surface_plasmon_prob = np.interp(self.energies, self.dieltensor.energies,
                                          surface_plasmon_prob)
 
-        return bulk_plas_prob, surface_plasmon_prob
+        self._bulk_plas_prob = bulk_plas_prob
+        self._surf_plas_prob = surface_plasmon_prob
+
+    @property
+    def bulk_plas_prob(self):
+        return self._bulk_plas_prob
+
+    @property
+    def surf_plas_prob(self):
+        return self._surf_plas_prob
 
     def calculate_yield(self, ion_energy, yield_convergence=1e-3):
         """
@@ -402,6 +431,10 @@ class QuotasCalculator(MSONable):
         total_yields = []
 
         while iteration_yield > yield_convergence:
+
+            if self.surf_plas_prob is not None:
+                excited_density = self.bulk_plasmon_excitation(excited_density)
+
             yield_density, excited_density = self.electon_escape(excited_density)
             yield_densities.append(yield_density)
 
@@ -432,6 +465,7 @@ class QuotasCalculator(MSONable):
             int((ion_energy - self.workfunction_data.vacuum_locpot) /
                 self.energy_spacing)
         )
+
         if self.surf_plas_prob is not None:
             pre_norm = np.trapz(neutralization_energy, self.energies)
             neutralization_energy -= neutralization_energy * self.surf_plas_prob
