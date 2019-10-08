@@ -330,9 +330,9 @@ class QuotasCalculator(MSONable):
         if dieltensor is not None:
             plasmon_parameters = plasmon_parameters or {"bulk": 0.1, "surface": 10}
             self.set_up_plasmon_probabilities(
-                    bulk_parameter=plasmon_parameters["bulk"],
-                    surface_parameter=plasmon_parameters["surface"]
-                )
+                bulk_parameter=plasmon_parameters["bulk"],
+                surface_parameter=plasmon_parameters["surface"]
+            )
 
     def set_up_escape_function(self):
         """
@@ -544,25 +544,28 @@ class QuotasCalculator(MSONable):
         Returns:
 
         """
-        # Build excited density matrix
-        density_matrix = []
-        for i in range(self.bulk_plas_prob.shape[0]):
-            density_matrix.append(excited_density)
-        density_matrix = np.array(density_matrix)
-
-        plasmon_loss = np.trapz(self.bulk_plas_prob * density_matrix,
-                                self.dieltensor.energies, axis=0)
+        plasmon_density = self.bulk_plas_prob @ np.diag(excited_density)
+        plasmon_loss = np.trapz(plasmon_density, self.dieltensor.energies, axis=0)
 
         plasmon_final = []
-        for plasmon_energy, row in zip(self.dieltensor.energies,
-                                       self.bulk_plas_prob * density_matrix):
+
+        for plasmon_energy, row in zip(self.dieltensor.energies, plasmon_density):
+            number_plasmons = np.trapz(row, self.energies)
+            e_after_energy_loss = np.roll(row, -int(plasmon_energy /
+                                                    self.energy_spacing))
+            e_from_plasmon_decay = np.roll(
+                self.valence_dos, int(plasmon_energy / self.energy_spacing))
+            e_from_plasmon_decay[self.conduction_dos < 0] = 0
+            e_from_plasmon_decay *= number_plasmons / np.trapz(
+                e_from_plasmon_decay, self.energies)
             plasmon_final.append(
-                np.roll(row, -int(plasmon_energy / self.energy_spacing))
+                e_after_energy_loss + e_from_plasmon_decay
             )
+
         plasmon_final = np.array(plasmon_final)
         final_density = np.trapz(plasmon_final, self.dieltensor.energies, axis=0)
 
-        return excited_density - plasmon_loss + final_density
+        return excited_density, plasmon_loss, final_density
 
     @staticmethod
     def step_escape_probability(angle, energy, barrier):
