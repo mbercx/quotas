@@ -598,35 +598,6 @@ class QuotasCalculator(MSONable):
 
         return 4 * k_perp * p_perp / (k_perp + p_perp) ** 2
 
-    @staticmethod
-    def bulk_plasmon_loss(electron_energy, energies, loss_function,
-                          time_parameter):
-        """
-        Corresponds to the MATLAB function bulkPlasLoss.
-
-        Args:
-            electron_energy:
-            energies:
-            loss_function:
-            time_parameter:
-
-        Returns:
-
-        """
-
-        max_index = sum(energies < electron_energy)
-
-        total_loss_rate = np.trapz(loss_function[:max_index], energies[:max_index])
-        if total_loss_rate == 0:
-            loss_probabilities = np.zeros(loss_function.shape)
-
-        else:
-            loss_probabilities = loss_function / total_loss_rate * \
-                                 (1 - np.exp(-total_loss_rate * time_parameter))
-            loss_probabilities[energies > electron_energy] = 0
-
-        return loss_probabilities
-
 
 # Stolen from pymatgen.analysis.surface_analysis
 # Idea is to write a nice postprocessing tool extracting the necessary
