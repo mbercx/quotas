@@ -568,7 +568,7 @@ class QuotasCalculator(MSONable):
         plasmon_final = np.array(plasmon_final)
         final_density = np.trapz(plasmon_final, self.dieltensor.energies, axis=0)
 
-        return excited_density, plasmon_loss, final_density
+        return excited_density - plasmon_loss + final_density
 
     @staticmethod
     def step_escape_probability(angle, energy, barrier):
