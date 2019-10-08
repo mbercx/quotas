@@ -547,23 +547,31 @@ class QuotasCalculator(MSONable):
         Returns:
 
         """
-        plasmon_density = self.bulk_plas_prob @ np.diag(excited_density)
+        plasmon_density = []
+        for row in self.bulk_plas_prob:
+            plasmon_density.append(row * excited_density)
+        plasmon_density = np.array(plasmon_density)
         plasmon_loss = np.trapz(plasmon_density, self.dieltensor.energies, axis=0)
 
         plasmon_final = []
+        zero_row = np.zeros(self.energies.shape)
 
         for plasmon_energy, row in zip(self.dieltensor.energies, plasmon_density):
-            number_plasmons = np.trapz(row, self.energies)
-            e_after_energy_loss = np.roll(row, -int(plasmon_energy /
-                                                    self.energy_spacing))
-            e_from_plasmon_decay = np.roll(
-                self.valence_dos, int(plasmon_energy / self.energy_spacing))
-            e_from_plasmon_decay[self.conduction_dos < 0] = 0
-            e_from_plasmon_decay *= number_plasmons / np.trapz(
-                e_from_plasmon_decay, self.energies)
-            plasmon_final.append(
-                e_after_energy_loss + e_from_plasmon_decay
-            )
+
+            if np.all(row == 0):
+                plasmon_final.append(zero_row)
+            else:
+                number_plasmons = np.trapz(row, self.energies)
+                e_after_energy_loss = np.roll(row, -int(plasmon_energy /
+                                                        self.energy_spacing))
+                e_from_plasmon_decay = np.roll(
+                    self.valence_dos, int(plasmon_energy / self.energy_spacing))
+                e_from_plasmon_decay[self.conduction_dos < 0] = 0
+                e_from_plasmon_decay *= number_plasmons / np.trapz(
+                    e_from_plasmon_decay, self.energies)
+                plasmon_final.append(
+                    e_after_energy_loss + e_from_plasmon_decay
+                )
 
         plasmon_final = np.array(plasmon_final)
         final_density = np.trapz(plasmon_final, self.dieltensor.energies, axis=0)
