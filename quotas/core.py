@@ -3,19 +3,23 @@
 # Distributed under the terms of the MIT License
 
 import numpy as np
-import os
+import os, cmath
 import copy
 import string
 import sys
 import json
 import warnings
+import matplotlib.pyplot as plt
+
+from scipy import constants
+from scipy.constants import hbar, e, m_e
 
 from fnmatch import fnmatch
 from pymatgen import Lattice, PeriodicSite, Structure, Composition
 from pymatgen.core.surface import SlabGenerator, Slab
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.vasp.inputs import Poscar
-from pymatgen.io.vasp.outputs import Outcar, Locpot
+from pymatgen.io.vasp.outputs import Outcar, Locpot, Vasprun
 from pymatgen.util.plotting import pretty_plot
 from monty.json import MSONable, MontyDecoder, MontyEncoder
 from monty.io import zopen
@@ -39,6 +43,7 @@ class QSlab(Slab):
     inherited, but we need to add some convenience methods of our own.
 
     """
+
     def __init__(self, lattice, species, coords, miller_index,
                  oriented_unit_cell, shift, scale_factor, reorient_lattice=True,
                  validate_proximity=False, to_unit_cell=False,
@@ -46,7 +51,8 @@ class QSlab(Slab):
                  site_properties=None, energy=None):
         super(QSlab, self).__init__(lattice, species, coords, miller_index,
                                     oriented_unit_cell, shift, scale_factor,
-                                    reorient_lattice, validate_proximity, to_unit_cell,
+                                    reorient_lattice, validate_proximity,
+                                    to_unit_cell,
                                     reconstruction, coords_are_cartesian,
                                     site_properties, energy)
 
@@ -267,10 +273,12 @@ class QSlab(Slab):
                 if "magmom" in self.site_properties.keys():
                     warnings.warn("Outcar does not contain any magnetic moments! "
                                   "Keeping magnetic moments from initial slab.")
-                    new_slab.add_site_property("magmom", self.site_properties["magmom"])
+                    new_slab.add_site_property("magmom",
+                                               self.site_properties["magmom"])
             else:
                 new_slab.add_site_property("magmom",
-                                           [site["tot"] for site in out.magnetization])
+                                           [site["tot"] for site in
+                                            out.magnetization])
 
         # Update the lattice
         self._lattice = new_slab.lattice
@@ -285,189 +293,299 @@ class QSlab(Slab):
                          properties=new_site.properties)
 
 
-def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
+class QuotasCalculator(MSONable):
     """
-    Fix atoms of a slab to represent the bulk of the material. Which atoms are
-    fixed depends on whether the user wants to fix one side or the center, and
-    how exactly the part of the slab is defined.
-
-    Args:
-        poscar (:class: `pymatgen.io.vasp,outputs.Poscar`): The poscar file of the slab
-
-        thickness (float): The thickness of the fixed part of the slab,
-            expressed in number of layers or Angstroms, depending on the
-            method.
-
-        method (string): How to define the thickness of the part of the slab
-            that is fixed:
-
-                "layers" (default): Fix a set amount of layers. The layers are
-                found using the 'find_atomic_layers' method.
-                "angstroms": Fix a part of the slab of a thickness defined in
-                angstroms.
-
-        part (string): Which part of the slab to fix:
-
-                "center" (default): Fix the atoms at the center of the slab.
-
-    Returns:
-        selective dynamics (Nx3 array): bool values for selective dynamics,
-            where N is number of sites. Defaults to None.
+    Calculator class for the QUOTAS project.
 
     """
-    # TODO : This class has been moved elsewhere. Maybe I should remove it here,
-    #  or it could be useful for others...
 
-    if method == "layers":
+    def __init__(self, total_dos, workfunction_data, dieltensor,
+                 energy_spacing=1e-2):
+        """
+        Initialize a QuotasCalculator.
 
-        atomic_layers = find_atomic_layers(poscar.structure)
+        """
 
-        if part == "center":
+        self.total_dos = total_dos
+        self.workfunction_data = workfunction_data
+        self.dieltensor = dieltensor
+        self.energy_spacing = energy_spacing
 
-            # Even number of layers
-            if len(atomic_layers) % 2 == 0:
+        self.energies = np.arange(
+            total_dos.energies.min(), total_dos.energies.max(), energy_spacing
+        )
+        self.dos = np.interp(self.energies, total_dos.energies,
+                             sum(list(total_dos.densities.values())))
 
-                # Check if the user requested an odd number of layers for the
-                # fixed part of the slab
-                if thickness % 2 == 1:
-                    print("Found an even number of layers, but the user " +
-                          "requested an odd number of fixed layers. Adding "
-                          "one layer to the fixed part of the slab.")
-                    thickness += 1
+        self.valence_dos = self.dos.copy()
+        self.valence_dos[self.energies > self.total_dos.efermi] = 0
+        self.conduction_dos = self.dos.copy()
+        self.conduction_dos[self.energies < self.total_dos.efermi] = 0
 
-            # Odd number of layers
-            if len(atomic_layers) % 2 == 1:
+        self.escape_function = self.set_up_escape_function()
+        self.bulk_plas_prob, self.surf_plas_prob = \
+            self.set_up_plasmon_probabilities(0.1, 10)
 
-                # Check if the user requested an even number of layers for the
-                # fixed part of the slab
-                if thickness % 2 == 0:
-                    print("Found an odd number of layers, but the user " +
-                          "requested an even number of fixed layers. Adding "
-                          "one layer to the fixed part of the slab.")
-                    thickness += 1
+    def set_up_escape_function(self):
 
-            # Calculate the number of layers to optimize on each site
-            n_optimize_layers = int((len(atomic_layers) - thickness) / 2)
+        conduction_energy = self.total_dos.get_cbm_vbm()[1]
+        barrier = self.workfunction_data.vacuum_locpot - conduction_energy
 
-            if n_optimize_layers < 5:
-                print("WARNING: Less than 5 layers are optimized on each "
-                      "side of the slab.")
+        theta = np.arange(0, np.pi / 2, 0.01)
+        return [np.trapz(np.array(
+            [self.step_escape_probability(t, energy - conduction_energy, barrier)
+             for t in theta]) * np.sin(theta), theta) / 2
+                if energy > self.workfunction_data.vacuum_locpot else 0
+                for energy in self.energies]
 
-            # Take the fixed layers from the atomic layers of the slab
-            fixed_layers = atomic_layers[n_optimize_layers: n_optimize_layers +
-                                                            thickness]
+    def set_up_plasmon_probabilities(self, bulk_parameter, surface_parameter):
+        """
+
+        Args:
+            surface_parameter:
+
+        Returns:
+
+        """
+        bulk_loss_function = self.dieltensor.get_loss_function()
+        conduction_energy = self.total_dos.get_cbm_vbm()[1]
+
+        bulk_plas_prob = []
+        diffs = np.diff(self.dieltensor.energies)
+        max_index = 0
+        total_loss_rate = 0
+
+        for energy in self.energies:
+
+            while self.dieltensor.energies[max_index + 1] \
+                    < energy - conduction_energy:
+                max_index += 1
+                total_loss_rate += (bulk_loss_function[max_index] +
+                                    bulk_loss_function[max_index - 1]) / 2 * \
+                                   diffs[max_index - 1]
+
+            if energy < conduction_energy or total_loss_rate == 0:
+                bulk_plas_prob.append(np.zeros(bulk_loss_function.shape))
+
+            else:
+                loss_probabilities = bulk_loss_function / total_loss_rate * \
+                                     (1 - np.exp(-total_loss_rate * bulk_parameter))
+                loss_probabilities[self.dieltensor.energies
+                                   > energy - conduction_energy] = 0
+                bulk_plas_prob.append(loss_probabilities)
+
+        bulk_plas_prob = np.array(bulk_plas_prob).swapaxes(0, 1)
+
+        surface_loss_function = self.dieltensor.get_loss_function(surface=True)
+        surface_plasmon_prob = surface_loss_function / \
+                               (surface_loss_function + surface_parameter)
+
+        surface_plasmon_prob = np.interp(self.energies, self.dieltensor.energies,
+                                         surface_plasmon_prob)
+
+        return bulk_plas_prob, surface_plasmon_prob
+
+    def calculate_yield(self, ion_energy, yield_convergence=1e-3):
+        """
+
+        Args:
+            ion_energy:
+
+        Returns:
+
+        """
+
+        excited_density = self.auger_neutralization(ion_energy)
+
+        iteration_yield = 1
+        yield_densities = []
+        total_yields = []
+
+        while iteration_yield > yield_convergence:
+            yield_density, excited_density = self.electon_escape(excited_density)
+            yield_densities.append(yield_density)
+
+            excited_density = self.electron_scatter(excited_density)
+            iteration_yield = np.trapz(yield_density, self.energies)
+            print(iteration_yield)
+            total_yields.append(iteration_yield)
+
+        vac_index = sum(self.energies < self.workfunction_data.vacuum_locpot)
+        final_yield_density = sum(yield_densities)
+        final_yield_density = final_yield_density[vac_index:]
+        final_energies = self.energies[vac_index:] \
+                         - self.workfunction_data.vacuum_locpot
+
+        return final_energies, final_yield_density, sum(total_yields)
+
+    def auger_neutralization(self, ion_energy):
+        """
+        Calculate the distribution of excited electrons after the Auger
+        Neutralization of an incoming ion.
+
+        Returns:
+
+        """
+        # Calculate the energy released upon neutralization
+        neutralization_energy = np.roll(
+            self.valence_dos,
+            int((ion_energy - self.workfunction_data.vacuum_locpot) /
+                self.energy_spacing)
+        )
+        if self.surf_plas_prob is not None:
+            pre_norm = np.trapz(neutralization_energy, self.energies)
+            neutralization_energy -= neutralization_energy * self.surf_plas_prob
+            plasmon_fraction = np.trapz(neutralization_energy,
+                                        self.energies) / pre_norm
+
+        excited_density = np.convolve(
+            self.valence_dos,
+            neutralization_energy[sum(self.energies < 0):],
+            "full"
+        )
+
+        excited_density = excited_density[:len(self.energies)]
+        excited_density *= self.conduction_dos
+        normalization = np.trapz(excited_density, self.energies)
+
+        if self.surf_plas_prob is not None:
+            normalization /= plasmon_fraction
+
+        excited_density /= normalization
+
+        return excited_density
+
+    def electon_escape(self, excited_density):
+        """
+        Calculate the distribution of electrons that have escaped.
+
+        Notes: Make this function static?
+
+        Returns:
+
+        """
+        yield_density = excited_density * self.escape_function
+        new_excited_density = excited_density - yield_density
+
+        return yield_density, new_excited_density
+
+    def electron_scatter(self, excited_density):
+        """
+        Calculate the distribution of excited electrons after scattering.
+
+        Returns:
+
+        """
+        # Remove electrons which are below the vacuum level
+        conduction_dos = self.conduction_dos
+        excited_density[self.energies < self.workfunction_data.vacuum_locpot] = 0
+
+        electrons_left = np.trapz(excited_density, self.energies)
+
+        energy_distribution = np.convolve(self.valence_dos, excited_density, "full")
+
+        scatter_transform = []
+        for i in range(len(self.energies)):
+            scatter_transform.append(energy_distribution[i:i + len(self.energies)])
+        scatter_transform = np.array(scatter_transform)
+
+        conduction_matrix = np.matmul(
+            np.reshape(conduction_dos, (-1, 1)),
+            np.reshape(conduction_dos, (-1, 1)).transpose()
+        )
+
+        scatter_transform *= conduction_matrix
+
+        scatter_distribution = np.trapz(scatter_transform, self.energies, 0)
+        scatter_distribution *= 2 * electrons_left / np.trapz(
+            scatter_distribution, self.energies)
+
+        return scatter_distribution
+
+    def bulk_plasmon_excitation(self, excited_density):
+        """
+        Allow for a bulk plasmon excitation event for the excited density of
+        electrons.
+
+        Returns:
+
+        """
+        # Build excited density matrix
+        density_matrix = []
+        for i in range(self.bulk_plas_prob.shape[0]):
+            density_matrix.append(excited_density)
+        density_matrix = np.array(density_matrix)
+
+        plasmon_loss = np.trapz(self.bulk_plas_prob * density_matrix,
+                                self.dieltensor.energies, axis=0)
+
+        plasmon_final = []
+        for plasmon_energy, row in zip(self.dieltensor.energies,
+                                       self.bulk_plas_prob * density_matrix):
+            plasmon_final.append(
+                np.roll(row, -int(plasmon_energy / self.energy_spacing))
+            )
+        plasmon_final = np.array(plasmon_final)
+        final_density = np.trapz(plasmon_final, self.dieltensor.energies, axis=0)
+
+        return excited_density - plasmon_loss + final_density
+
+    @staticmethod
+    def step_escape_probability(angle, energy, barrier):
+        """
+        Calculate the escape probability of a step function barrier.
+
+        Args:
+            angle:
+            energy:
+            barrier:
+
+        Returns:
+
+        """
+        if energy < barrier:
+            return 0
+
+        k = (2 * energy * m_e / (hbar / e) ** 2) ** (1 / 2)
+
+        k_perp = k * np.cos(angle)
+        energy_perp = k_perp ** 2 * (hbar / e) ** 2 / 2 / m_e
+
+        if energy_perp > barrier:
+            p_perp = (2 * m_e * (energy_perp - barrier)) ** (1 / 2) / (hbar / e)
+        else:
+            p_perp = 0
+
+        return 4 * k_perp * p_perp / (k_perp + p_perp) ** 2
+
+    @staticmethod
+    def bulk_plasmon_loss(electron_energy, energies, loss_function,
+                          time_parameter):
+        """
+        Corresponds to the MATLAB function bulkPlasLoss.
+
+        Args:
+            electron_energy:
+            energies:
+            loss_function:
+            time_parameter:
+
+        Returns:
+
+        """
+
+        max_index = sum(energies < electron_energy)
+
+        total_loss_rate = np.trapz(loss_function[:max_index], energies[:max_index])
+        if total_loss_rate == 0:
+            loss_probabilities = np.zeros(loss_function.shape)
 
         else:
-            raise NotImplementedError("Requested part is not implemented " +
-                                      "(yet).")
-            # TODO Implement oneside
+            loss_probabilities = loss_function / total_loss_rate * \
+                                 (1 - np.exp(-total_loss_rate * time_parameter))
+            loss_probabilities[energies > electron_energy] = 0
 
-        fixed_sites = [site for layer in fixed_layers for site in layer]
-
-        # Set up the selective dynamics property
-
-        selective_dynamics = []
-
-        for site in poscar.structure.sites:
-            if site in fixed_sites:
-                selective_dynamics.append([False, False, False])
-            else:
-                selective_dynamics.append([True, True, True])
-
-        return selective_dynamics
-
-    else:
-        raise NotImplementedError("Requested method is not implemented (yet).")
-        # TODO Implement angstrom
-
-
-def write_all_slab_terminations(structure, miller_indices, min_slab_size,
-                                min_vacuum_size):
-    """
-    Writes the POSCAR files for all slab terminations.
-
-    Args:
-        structure:
-        miller_indices:
-        min_slab_size:
-        min_vacuum_size:
-
-    Returns:
-        None
-    """
-
-    slab_gen = SlabGenerator(structure, miller_indices, min_slab_size,
-                             min_vacuum_size)
-    slabs = slab_gen.get_slabs()
-
-    letter_counter = 0
-
-    for slab in slabs:
-        slab.sort(reverse=True)
-
-        slab_letter = string.ascii_lowercase[letter_counter]
-        letter_counter += 1
-
-        filename = "".join([str(number) for number in miller_indices]) + "_" \
-                   + slab_letter + "_" + str(min_slab_size) + "l_POSCAR.vasp"
-
-        slab.to(fmt='vasp', filename=filename)
-
-        print("Written slab structure to " + filename)
-        print("Slab is symmetric = " + str(slab.is_symmetric()))
-        print("Slab is polar = " + str(slab.is_polar()))
-
-
-def find_suitable_kpar(structure, kpoints, max_kpar=30):
-    """
-
-    :param structure:
-    :param kpoints:
-    :return:
-    """
-
-    spg = SpacegroupAnalyzer(structure)
-
-    kpar = len(spg.get_ir_reciprocal_mesh(kpoints.kpts))
-    divisors = generate_divisors(kpar)
-
-    while kpar > max_kpar:
-        kpar = next(divisors)
-
-    return kpar
-
-
-def find_irr_kpoints(structure, kpoints):
-    """
-
-    :param structure:
-    :param kpoints:
-    :return:
-    """
-
-    spg = SpacegroupAnalyzer(structure, symprec=1e-5)
-
-    return len(spg.get_ir_reciprocal_mesh(kpoints.kpts))
-
-
-def generate_divisors(number):
-    """
-
-    Args:
-        number:
-
-    Returns:
-
-    """
-    divisor = int(number / 2)
-
-    while divisor != 0:
-
-        while number % divisor != 0:
-            divisor -= 1
-
-        yield divisor
-        divisor -= 1
+        return loss_probabilities
 
 
 # Stolen from pymatgen.analysis.surface_analysis
@@ -692,7 +810,7 @@ class WorkFunctionData(MSONable):
 
     @classmethod
     def from_file(cls, filename):
-        """
+        """»
 
         Args:
             filename:
@@ -961,8 +1079,552 @@ class WorkFunctionAnalyzer(MSONable):
         return cls.__init__(d["poscar"], d["locpot"], d["outcar"])
 
 
+class DielTensor(MSONable):
+    """
+    Class that represents the energy-dependent dielectric tensor of a solid
+    state material.
+
+    """
+
+    def __init__(self, energies, dielectric_tensor):
+        """
+        Initializes a DielTensor instance from the dielectric data.
+
+        Args:
+            energies (numpy.array): (N,) array with the energy grid in eV.
+            dielectric_tensor (numpy.array): (N, 3, 3) array with the dielectric
+                tensor.
+
+        """
+        self._energies = energies
+        self._dielectric_tensor = dielectric_tensor
+
+    def check_dielectric_data(self):
+        """
+        Function that performs some tests on the dielectric data, to make sure
+        input satisfies some constrains based on what we know about the dielectric
+        tensor.
+
+        Returns:
+            None
+
+        """
+        pass  # TODO
+
+    @property
+    def energies(self):
+        """
+        Energy grid for which the dielectric tensor is defined in the original data.
+
+        Returns:
+            numpy.array: (N,) shaped array with the energies of the grid in eV.
+
+        """
+        return self._energies
+
+    @property
+    def dielectric_tensor(self):
+        """
+        Dielectric tensor of the material, calculated for each energy in the energy
+        grid.
+
+        Returns:
+            numpy.array: (N, 3, 3) shaped array, where N corresponds to the number
+                of energy grid points, and 3 to the different directions x,y,z.
+        """
+        return self._dielectric_tensor
+
+    @property
+    def dielectric_function(self):
+        """
+        The averaged dielectric function, derived from the tensor components by
+        averaging the diagonal elements.
+
+        Returns:
+            np.array: (N,) shaped array with the dielectric function.
+        """
+        return np.array([np.mean(tensor.diagonal())
+                         for tensor in self.dielectric_tensor])
+
+    @property
+    def absorption_coefficient(self):
+        """
+        Calculate the optical absorption coefficient from the dielectric data.
+        For now the script only calculates the averaged absorption coefficient,
+        i.e. by first averaging the diagonal elements and then using this
+        dielectric function to calculate the absorption coefficient.
+
+        Notes:
+            The absorption coefficient is calculated as
+            .. math:: \\alpha = \\frac{2 E}{ \hbar c} k(E)
+            with $k(E)$ the imaginary part of the square root of the dielectric
+            function
+
+        Returns:
+            np.array: (N,) shaped array with the energy (eV) dependent absorption
+                coefficient in m^{-1}, where the energies correspond to self.energies.
+        """
+
+        energy = self.energies
+        ext_coeff = np.array([cmath.sqrt(v).imag for v in self.dielectric_function])
+
+        return 2.0 * energy * ext_coeff / (
+                constants.hbar / constants.e * constants.c)
+
+    def add_intraband_dieltensor(self, plasma_frequency, damping=0.1):
+        """
+        Add intraband component of the dielectric tensor based on the Drude model.
+
+        Args:
+            plasma_frequency:
+            damping:
+
+        Returns:
+
+        """
+        drude_diel = self.from_drude_model(plasma_frequency=plasma_frequency,
+                                           energies=self.energies, damping=damping)
+
+        self._dielectric_tensor += drude_diel.dielectric_tensor - 1
+
+    def get_absorptivity(self, thickness, method="beer-lambert"):
+        """
+        Calculate the absorptivity for an absorber layer with a specified thickness
+        and cell construction.
+
+        Args:
+            thickness (float): Thickness of the absorber layer, expressed in meters.
+            method (str): Method for calculating the absorptivity.
+
+        Returns:
+            np.array: (N,) shaped array with the energy (eV) dependent absorptivity,
+                where the energies correspond to self.energies.
+
+        """
+        if method == "beer-lambert":
+            return 1.0 - np.exp(-2.0 * self.absorption_coefficient * thickness)
+        else:
+            raise NotImplementedError("Unrecognized method for calculating the "
+                                      "absorptivity.")
+
+    def get_loss_function(self, surface=False):
+        """
+        Calculate the loss function based on the averaged dielectric function of
+        the dielectric tensor.
+
+        Args:
+            surface:
+
+        Returns:
+
+        """
+
+        er = self.dielectric_function.real
+        ei = self.dielectric_function.imag
+
+        if surface:
+            loss_function = ei / ((er + 1) ** 2 + ei ** 2)
+        else:
+            loss_function = ei / (er ** 2 + ei ** 2)
+
+        loss_function[np.isnan(loss_function)] = 0
+
+        return loss_function
+
+    def plot(self, part="diel", variable_range=None, diel_range=None):
+        """
+        Plot the real and/or imaginary part of the dielectric function.
+
+        Args:
+            part (str): Which part of the dielectric function to plot, i.e. either
+                "real", "imag" or "all".
+            variable_range (tuple): Lower and upper limits of the variable which
+                the requested function is plotted against.
+            diel_range (tuple): Lower and upper limits of the range of the requested
+                function in the plotted figure.
+
+        Returns:
+            None
+
+        """
+        if part == "diel":
+            f, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+
+            ax1.plot(self.energies, self.dielectric_function.real)
+            ax2.plot(self.energies, self.dielectric_function.imag)
+            if variable_range:
+                ax1.set(xlim=variable_range)
+                ax2.set(xlim=variable_range)
+            if diel_range:
+                ax1.set(ylim=diel_range)
+                ax2.set(ylim=diel_range)
+            ax1.set(ylabel=r"$\varepsilon_1$")
+            ax2.set(xlabel="Energy (eV)", ylabel=r"$\varepsilon_2$")
+            f.subplots_adjust(hspace=0.1)
+            plt.show()
+
+        elif part == "real":
+
+            plt.plot(self.energies, self.dielectric_function.real)
+            plt.xlabel("Energy (eV)")
+            if variable_range:
+                plt.xlim(variable_range)
+            if diel_range:
+                plt.ylim(diel_range)
+            plt.ylabel(r"$\varepsilon_1$")
+            plt.show()
+
+        elif part == "imag":
+
+            plt.plot(self.energies, self.dielectric_function.imag)
+            plt.xlabel("Energy (eV)")
+            if variable_range:
+                plt.xlim(variable_range)
+            if diel_range:
+                plt.ylim(diel_range)
+            plt.ylabel(r"$\varepsilon_2$")
+            plt.show()
+
+        elif part == "abs_coeff":
+
+            plt.plot(self.energies, self.absorption_coefficient)
+            plt.xlabel("Energy (eV)")
+            if variable_range:
+                plt.xlim(variable_range)
+            if diel_range:
+                plt.ylim(diel_range)
+            plt.ylabel(r"$\alpha(E)$")
+            plt.yscale("log")
+            plt.show()
+
+    def as_dict(self):
+        """
+        Note: stores the real and imaginary part of the dielectric tensor
+        separately, due to issues with JSON serializing complex numbers.
+
+        Returns:
+            dict: Dictionary representation of the DielTensor instance.
+        """
+        d = dict()
+        d["energies"] = self.energies
+        d["real_diel"] = self.dielectric_tensor.real
+        d["imag_diel"] = self.dielectric_tensor.imag
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        """
+        Initializes a DielTensor object from a dictionary.
+
+        Args:
+            d (dict): Dictionary from which the DielTensor should be initialized.
+
+        Returns:
+            DielTensor
+
+        """
+        energies = np.array(d["energies"]["data"])
+        real_diel = np.array(d["real_diel"]["data"])
+        imag_diel = np.array(d["imag_diel"]["data"])
+        return cls(energies, real_diel + 1j * imag_diel)
+
+    def to(self, filename):
+        """
+        Write the DielTensor to a JSON file.
+
+        Args:
+            filename (str): Path to the file in which the DielTensor should
+                be written.
+
+        Returns:
+            None
+
+        """
+        with zopen(filename, "w") as f:
+            f.write(self.to_json())
+
+    @classmethod
+    def from_file(cls, filename, fmt=None):
+        """
+        Initialize a DielTensor instance from a file.
+
+        Args:
+            filename (str): Path to file from which the dielectric data will be
+                loaded. Can (so far) either be a vasprun.xml, OUTCAR or json file.
+            fmt (str): Format of the file that contains the dielectric function
+                data. Is optional, as the method can also figure out the format
+                based on the filename.
+
+        Returns:
+            DielTensor: Dielectric tensor object from the dielectric data.
+
+        """
+        # Vasprun format: dielectric data is length 3 tuple
+        if fmt == "vasprun" or filename.endswith(".xml"):
+            dielectric_data = Vasprun(filename, parse_potcar_file=False).dielectric
+
+            energies = np.array(dielectric_data[0])
+            dielectric_tensor = np.array(
+                [to_matrix(*real_data) + 1j * to_matrix(*imag_data)
+                 for real_data, imag_data in zip(dielectric_data[1],
+                                                 dielectric_data[2])]
+            )
+            return cls(energies, dielectric_tensor)
+
+        # OUTCAR format: dielectric data is length 2 tuple
+        elif fmt == "outcar" or fnmatch(filename, "*OUTCAR*"):
+            outcar = Outcar(filename)
+            outcar.read_freq_dielectric()
+            return cls(outcar.frequencies, outcar.dielectric_tensor_function)
+
+        # JSON format
+        if fmt == "json" or filename.endswith(".json"):
+            with zopen(filename, "r") as f:
+                return cls.from_dict(json.loads(f.read()))
+
+        else:
+            raise IOError("Format of file not recognized. Note: Currently "
+                          "only vasprun.xml and OUTCAR files are supported.")
+
+    @classmethod
+    def from_drude_model(cls, plasma_frequency, energies, damping=0.05):
+        """
+        Initialize a DielTensor object based on the Drude model for metals.
+
+        Returns:
+
+        """
+
+        try:
+            if not plasma_frequency.shape == (3, 3):
+                raise ValueError("Plasma frequency array does not have right shape!")
+        except AttributeError:
+            if isinstance(plasma_frequency, float):
+                plasma_frequency *= np.eye(3)
+            else:
+                raise TypeError("The plasma frequency must be expressed either as "
+                                "a float or a numpy array of shape (3, 3).")
+
+        dieltensor = np.array(
+            [1 - omega ** 2 / (energies ** 2 + 1j * energies * damping)
+             for omega in plasma_frequency.reshape(9)]
+        ).reshape((3, 3, len(energies)))
+        dieltensor = dieltensor.swapaxes(0, 2)
+
+        return cls(energies, dieltensor)
+
+
+# Utility method
+
+def to_matrix(xx, yy, zz, xy, yz, xz):
+    """
+    Convert a list of matrix components to a symmetric 3x3 matrix.
+    Inputs should be in the order xx, yy, zz, xy, yz, xz.
+
+    Args:
+        xx (float): xx component of the matrix.
+        yy (float): yy component of the matrix.
+        zz (float): zz component of the matrix.
+        xy (float): xy component of the matrix.
+        yz (float): yz component of the matrix.
+        xz (float): xz component of the matrix.
+
+    Returns:
+        (np.array): The matrix, as a 3x3 numpy array.
+
+    """
+    matrix = np.array([[xx, xy, xz], [xy, yy, yz], [xz, yz, zz]])
+    return matrix
+
+
+def fix_slab_bulk(poscar, thickness, method="layers", part="center"):
+    """
+    Fix atoms of a slab to represent the bulk of the material. Which atoms are
+    fixed depends on whether the user wants to fix one side or the center, and
+    how exactly the part of the slab is defined.
+
+    Args:
+        poscar (:class: `pymatgen.io.vasp,outputs.Poscar`): The poscar file of the slab
+
+        thickness (float): The thickness of the fixed part of the slab,
+            expressed in number of layers or Angstroms, depending on the
+            method.
+
+        method (string): How to define the thickness of the part of the slab
+            that is fixed:
+
+                "layers" (default): Fix a set amount of layers. The layers are
+                found using the 'find_atomic_layers' method.
+                "angstroms": Fix a part of the slab of a thickness defined in
+                angstroms.
+
+        part (string): Which part of the slab to fix:
+
+                "center" (default): Fix the atoms at the center of the slab.
+
+    Returns:
+        selective dynamics (Nx3 array): bool values for selective dynamics,
+            where N is number of sites. Defaults to None.
+
+    """
+    # TODO : This class has been moved elsewhere. Maybe I should remove it here,
+    #  or it could be useful for others...
+
+    if method == "layers":
+
+        atomic_layers = find_atomic_layers(poscar.structure)
+
+        if part == "center":
+
+            # Even number of layers
+            if len(atomic_layers) % 2 == 0:
+
+                # Check if the user requested an odd number of layers for the
+                # fixed part of the slab
+                if thickness % 2 == 1:
+                    print("Found an even number of layers, but the user " +
+                          "requested an odd number of fixed layers. Adding "
+                          "one layer to the fixed part of the slab.")
+                    thickness += 1
+
+            # Odd number of layers
+            if len(atomic_layers) % 2 == 1:
+
+                # Check if the user requested an even number of layers for the
+                # fixed part of the slab
+                if thickness % 2 == 0:
+                    print("Found an odd number of layers, but the user " +
+                          "requested an even number of fixed layers. Adding "
+                          "one layer to the fixed part of the slab.")
+                    thickness += 1
+
+            # Calculate the number of layers to optimize on each site
+            n_optimize_layers = int((len(atomic_layers) - thickness) / 2)
+
+            if n_optimize_layers < 5:
+                print("WARNING: Less than 5 layers are optimized on each "
+                      "side of the slab.")
+
+            # Take the fixed layers from the atomic layers of the slab
+            fixed_layers = atomic_layers[n_optimize_layers: n_optimize_layers +
+                                                            thickness]
+
+        else:
+            raise NotImplementedError("Requested part is not implemented " +
+                                      "(yet).")
+            # TODO Implement oneside
+
+        fixed_sites = [site for layer in fixed_layers for site in layer]
+
+        # Set up the selective dynamics property
+
+        selective_dynamics = []
+
+        for site in poscar.structure.sites:
+            if site in fixed_sites:
+                selective_dynamics.append([False, False, False])
+            else:
+                selective_dynamics.append([True, True, True])
+
+        return selective_dynamics
+
+    else:
+        raise NotImplementedError("Requested method is not implemented (yet).")
+        # TODO Implement angstrom
+
+
+def write_all_slab_terminations(structure, miller_indices, min_slab_size,
+                                min_vacuum_size):
+    """
+    Writes the POSCAR files for all slab terminations.
+
+    Args:
+        structure:
+        miller_indices:
+        min_slab_size:
+        min_vacuum_size:
+
+    Returns:
+        None
+    """
+
+    slab_gen = SlabGenerator(structure, miller_indices, min_slab_size,
+                             min_vacuum_size)
+    slabs = slab_gen.get_slabs()
+
+    letter_counter = 0
+
+    for slab in slabs:
+        slab.sort(reverse=True)
+
+        slab_letter = string.ascii_lowercase[letter_counter]
+        letter_counter += 1
+
+        filename = "".join([str(number) for number in miller_indices]) + "_" \
+                   + slab_letter + "_" + str(min_slab_size) + "l_POSCAR.vasp"
+
+        slab.to(fmt='vasp', filename=filename)
+
+        print("Written slab structure to " + filename)
+        print("Slab is symmetric = " + str(slab.is_symmetric()))
+        print("Slab is polar = " + str(slab.is_polar()))
+
+
+def find_suitable_kpar(structure, kpoints, max_kpar=30):
+    """
+
+    :param structure:
+    :param kpoints:
+    :return:
+    """
+
+    spg = SpacegroupAnalyzer(structure)
+
+    kpar = len(spg.get_ir_reciprocal_mesh(kpoints.kpts))
+    divisors = generate_divisors(kpar)
+
+    while kpar > max_kpar:
+        kpar = next(divisors)
+
+    return kpar
+
+
+def find_irr_kpoints(structure, kpoints):
+    """
+
+    :param structure:
+    :param kpoints:
+    :return:
+    """
+
+    spg = SpacegroupAnalyzer(structure, symprec=1e-5)
+
+    return len(spg.get_ir_reciprocal_mesh(kpoints.kpts))
+
+
+def generate_divisors(number):
+    """
+
+    Args:
+        number:
+
+    Returns:
+
+    """
+    divisor = int(number / 2)
+
+    while divisor != 0:
+
+        while number % divisor != 0:
+            divisor -= 1
+
+        yield divisor
+        divisor -= 1
+
+
 # Stolen from https://goshippo.com/blog/measure-real-size-any-python-object/
 # Used to calculate the actual total size of a python object
+
 
 def get_size(obj, seen=None):
     """Recursively finds size of objects"""
