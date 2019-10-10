@@ -317,11 +317,6 @@ class QuotasCalculator(MSONable):
         self.dos = np.interp(self.energies, total_dos.energies,
                              sum(list(total_dos.densities.values())))
 
-        self.valence_dos = self.dos.copy()
-        self.valence_dos[self.energies > self.total_dos.efermi] = 0
-        self.conduction_dos = self.dos.copy()
-        self.conduction_dos[self.energies < self.total_dos.efermi] = 0
-
         self.escape_function = self.set_up_escape_function()
 
         self._bulk_plas_prob = None
@@ -414,6 +409,18 @@ class QuotasCalculator(MSONable):
     def surf_plas_prob(self):
         return self._surf_plas_prob
 
+    @property
+    def occupied_states(self):
+        occupied_states = self.dos.copy()
+        occupied_states[self.energies > self.total_dos.efermi] = 0
+        return occupied_states
+
+    @property
+    def empty_states(self):
+        empty_states = self.dos.copy()
+        empty_states[self.energies < self.total_dos.efermi] = 0
+        return empty_states
+
     def calculate_yield(self, ion_energy, yield_convergence=1e-3):
         """
 
@@ -461,7 +468,7 @@ class QuotasCalculator(MSONable):
         """
         # Calculate the energy released upon neutralization
         neutralization_energy = np.roll(
-            self.valence_dos,
+            self.occupied_states,
             int((ion_energy - self.workfunction_data.vacuum_locpot) /
                 self.energy_spacing)
         )
@@ -473,13 +480,13 @@ class QuotasCalculator(MSONable):
                                         self.energies) / pre_norm
 
         excited_density = np.convolve(
-            self.valence_dos,
+            self.occupied_states,
             neutralization_energy[sum(self.energies < 0):],
             "full"
         )
 
         excited_density = excited_density[:len(self.energies)]
-        excited_density *= self.conduction_dos
+        excited_density *= self.empty_states
         normalization = np.trapz(excited_density, self.energies)
 
         if self.surf_plas_prob is not None:
@@ -492,8 +499,6 @@ class QuotasCalculator(MSONable):
     def electon_escape(self, excited_density):
         """
         Calculate the distribution of electrons that have escaped.
-
-        Notes: Make this function static?
 
         Returns:
 
@@ -511,12 +516,12 @@ class QuotasCalculator(MSONable):
 
         """
         # Remove electrons which are below the vacuum level
-        conduction_dos = self.conduction_dos
+        conduction_dos = self.empty_states
         excited_density[self.energies < self.workfunction_data.vacuum_locpot] = 0
 
         electrons_left = np.trapz(excited_density, self.energies)
 
-        energy_distribution = np.convolve(self.valence_dos, excited_density, "full")
+        energy_distribution = np.convolve(self.occupied_states, excited_density, "full")
 
         scatter_transform = []
         for i in range(len(self.energies)):
@@ -565,8 +570,8 @@ class QuotasCalculator(MSONable):
                 e_after_energy_loss = np.roll(row, -int(plasmon_energy /
                                                         self.energy_spacing))
                 e_from_plasmon_decay = np.roll(
-                    self.valence_dos, int(plasmon_energy / self.energy_spacing))
-                e_from_plasmon_decay[self.conduction_dos < 0] = 0
+                    self.occupied_states, int(plasmon_energy / self.energy_spacing))
+                e_from_plasmon_decay[self.empty_states < 0] = 0
                 e_from_plasmon_decay *= number_plasmons / np.trapz(
                     e_from_plasmon_decay, self.energies)
                 plasmon_final.append(
@@ -577,6 +582,28 @@ class QuotasCalculator(MSONable):
         final_density = np.trapz(plasmon_final, self.dieltensor.energies, axis=0)
 
         return excited_density - plasmon_loss + final_density
+
+    def as_dict(self):
+        """
+
+
+        Returns:
+
+        """
+        pass
+
+    @classmethod
+    def from_dict(cls, d):
+        """
+
+        Args:
+            d:
+
+        Returns:
+
+        """
+        pass
+
 
     @staticmethod
     def step_escape_probability(angle, energy, barrier):
