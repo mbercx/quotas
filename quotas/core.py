@@ -396,8 +396,8 @@ class QuotasCalculator(MSONable):
         bulk_plas_prob = np.array(bulk_plas_prob).swapaxes(0, 1)
 
         surface_loss_function = self.dieltensor.get_loss_function(surface=True)
-        surface_plasmon_prob = surface_loss_function / \
-                               (surface_loss_function + surface_parameter)
+        surface_plasmon_prob = surface_parameter * surface_loss_function / \
+                               (surface_parameter * surface_loss_function + 1)
 
         surface_plasmon_prob = np.interp(self.energies, self.dieltensor.energies,
                                          surface_plasmon_prob)
