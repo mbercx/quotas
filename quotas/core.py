@@ -640,7 +640,7 @@ class QuotasCalculator(MSONable):
         )
 
     @classmethod
-    def from_file(cls, filename):
+    def from_file(cls, filename, energy_spacing_override=None):
         """
         Initialize a QuotasCalculator instance from a file.
 
@@ -652,7 +652,10 @@ class QuotasCalculator(MSONable):
 
         # JSON format
         with zopen(filename, "r") as f:
-            return cls.from_dict(json.loads(f.read()))
+            d = json.loads(f.read())
+            if energy_spacing_override is not None:
+                d["energy_spacing"] = energy_spacing_override
+            return cls.from_dict(d)
 
     @staticmethod
     def step_escape_probability(angle, energy, barrier):
