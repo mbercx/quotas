@@ -606,6 +606,21 @@ class QuotasCalculator(MSONable):
         }
         return d
 
+    def to(self, filename):
+        """
+        Write the QuotasCalculator to a JSON file.
+
+        Args:
+            filename (str): Path to the file.
+
+        Returns:
+            None
+
+        """
+        with zopen(filename, "w") as f:
+            f.write(self.to_json())
+
+
     @classmethod
     def from_dict(cls, d):
         """
@@ -623,6 +638,21 @@ class QuotasCalculator(MSONable):
             energy_spacing=d["energy_spacing"],
             plasmon_parameters=d["plasmon_parameters"]
         )
+
+    @classmethod
+    def from_file(cls, filename):
+        """
+        Initialize a QuotasCalculator instance from a file.
+
+        Args:
+            filename (str): Path to JSON file.
+        Returns:
+
+        """
+
+        # JSON format
+        with zopen(filename, "r") as f:
+            return cls.from_dict(json.loads(f.read()))
 
     @staticmethod
     def step_escape_probability(angle, energy, barrier):
