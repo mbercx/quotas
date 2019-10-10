@@ -17,6 +17,7 @@ from scipy.constants import hbar, e, m_e
 from fnmatch import fnmatch
 from pymatgen import Lattice, PeriodicSite, Structure, Composition
 from pymatgen.core.surface import SlabGenerator, Slab
+from pymatgen.electronic_structure.dos import Dos
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.vasp.inputs import Poscar
 from pymatgen.io.vasp.outputs import Outcar, Locpot, Vasprun
@@ -310,6 +311,7 @@ class QuotasCalculator(MSONable):
         self.workfunction_data = workfunction_data
         self.dieltensor = dieltensor
         self.energy_spacing = energy_spacing
+        self.plasmon_parameters = plasmon_parameters
 
         self.energies = np.arange(
             total_dos.energies.min(), total_dos.energies.max(), energy_spacing
@@ -362,6 +364,8 @@ class QuotasCalculator(MSONable):
         Returns:
 
         """
+        self.plasmon_parameters = {"bulk": bulk_parameter,
+                                   "surface": surface_parameter}
         bulk_loss_function = self.dieltensor.get_loss_function()
         conduction_energy = self.total_dos.get_cbm_vbm()[1]
 
@@ -521,7 +525,8 @@ class QuotasCalculator(MSONable):
 
         electrons_left = np.trapz(excited_density, self.energies)
 
-        energy_distribution = np.convolve(self.occupied_states, excited_density, "full")
+        energy_distribution = np.convolve(self.occupied_states, excited_density,
+                                          "full")
 
         scatter_transform = []
         for i in range(len(self.energies)):
@@ -590,7 +595,16 @@ class QuotasCalculator(MSONable):
         Returns:
 
         """
-        pass
+        d = {
+            "@module": self.__class__.__module__,
+            "@class": self.__class__.__name__,
+            "total_dos": self.total_dos.as_dict(),
+            "workfunction_data": self.workfunction_data.as_dict(),
+            "dieltensor": self.dieltensor.as_dict(),
+            "energy_spacing": self.energy_spacing,
+            "plasmon_parameters": self.plasmon_parameters
+        }
+        return d
 
     @classmethod
     def from_dict(cls, d):
@@ -602,8 +616,13 @@ class QuotasCalculator(MSONable):
         Returns:
 
         """
-        pass
-
+        return cls(
+            total_dos=Dos.from_dict(d["total_dos"]),
+            workfunction_data=WorkFunctionData.from_dict(d["workfunction_data"]),
+            dieltensor=DielTensor.from_dict(d["dieltensor"]),
+            energy_spacing=d["energy_spacing"],
+            plasmon_parameters=d["plasmon_parameters"]
+        )
 
     @staticmethod
     def step_escape_probability(angle, energy, barrier):
@@ -1352,9 +1371,9 @@ class DielTensor(MSONable):
             dict: Dictionary representation of the DielTensor instance.
         """
         d = dict()
-        d["energies"] = self.energies
-        d["real_diel"] = self.dielectric_tensor.real
-        d["imag_diel"] = self.dielectric_tensor.imag
+        d["energies"] = MontyEncoder().default(self.energies)
+        d["real_diel"] = MontyEncoder().default(self.dielectric_tensor.real)
+        d["imag_diel"] = MontyEncoder().default(self.dielectric_tensor.imag)
         return d
 
     @classmethod
@@ -1369,9 +1388,9 @@ class DielTensor(MSONable):
             DielTensor
 
         """
-        energies = np.array(d["energies"]["data"])
-        real_diel = np.array(d["real_diel"]["data"])
-        imag_diel = np.array(d["imag_diel"]["data"])
+        energies = MontyDecoder().process_decoded(d["energies"])
+        real_diel = MontyDecoder().process_decoded(d["real_diel"])
+        imag_diel = MontyDecoder().process_decoded(d["imag_diel"])
         return cls(energies, real_diel + 1j * imag_diel)
 
     def to(self, filename):
