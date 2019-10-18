@@ -771,7 +771,7 @@ class WorkFunctionData(MSONable):
         Returns plt of the locpot vs c axis
         """
 
-        plt = pretty_plot() if not plt else plt
+        #plt = pretty_plot() if not plt else plt
         ax = list(plt.subplots())[1]
         ax.spines['top'].set_visible(False)
 
