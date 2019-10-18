@@ -771,7 +771,7 @@ class WorkFunctionData(MSONable):
         Returns plt of the locpot vs c axis
         """
 
-        #plt = pretty_plot() if not plt else plt
+        plt = pretty_plot() if not plt else plt
         ax = list(plt.subplots())[1]
         ax.spines['top'].set_visible(False)
 
@@ -803,6 +803,8 @@ class WorkFunctionData(MSONable):
         plt.xticks(fontsize=15, rotation=45)
         plt.ylabel(r"Energy (eV)", fontsize=25)
         plt.yticks(fontsize=15)
+
+        return plt
 
     def get_labels(self, plt, label_fontsize=10):
         """
