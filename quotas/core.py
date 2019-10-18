@@ -804,8 +804,6 @@ class WorkFunctionData(MSONable):
         plt.ylabel(r"Energy (eV)", fontsize=25)
         plt.yticks(fontsize=15)
 
-        return plt
-
     def get_labels(self, plt, label_fontsize=10):
         """
         Handles the optional labelling of the plot with relevant quantities
@@ -843,7 +841,6 @@ class WorkFunctionData(MSONable):
 
         # label the bulk-like locpot
         plt.plot([0, 1], [self.ave_bulk_p] * 2, 'r--', linewidth=1., zorder=-1)
-        print(label_in_vac)
         xy = [label_in_vac, self.ave_bulk_p + self.ave_locpot * 0.05]
         plt.annotate(r"$V^{interior}_{slab}=%.2f$" % (self.ave_bulk_p),
                      xy=xy, xytext=xy, color='r', fontsize=label_fontsize)
