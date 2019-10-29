@@ -436,14 +436,22 @@ class QuotasCalculator(MSONable):
 
     def calculate_yield(self, ion_energy, yield_convergence=1e-3):
         """
+        Calculate the secondary electron emission (SEE) yield density for a
+        specified ionization energy of an incoming ion.
 
         Args:
-            ion_energy:
+            ion_energy (float): Ionization energy of the incoming ion.
+            yield_convergence (float): Convergence condition on the yield
+                calculation using the electron cascade cycle.
 
         Returns:
+            dict: Dictionary with three keys:
+
+                "energy": Kinetic energy mesh of the yield density.
+                "yield": Corresponding yield density per ion.
+                "total_yield": Total SEE yield per ion.
 
         """
-
         excited_density = self.auger_neutralization(ion_energy)
 
         iteration_yield = 1
@@ -468,7 +476,11 @@ class QuotasCalculator(MSONable):
         final_energies = self.energies[vac_index:] \
                          - self.workfunction_data.vacuum_locpot
 
-        return final_energies, final_yield_density, sum(total_yields)
+        return {
+            "energy": final_energies,
+            "yield": final_yield_density,
+            "total_yield": sum(total_yields)
+        }
 
     def auger_neutralization(self, ion_energy):
         """
