@@ -358,11 +358,19 @@ class QuotasCalculator(MSONable):
 
     def set_up_plasmon_probabilities(self, bulk_parameter, surface_parameter):
         """
+        Set up the plasmon probability functions for a chosen set of parameters.
+        Is performed during the initialization of the QuotasCalculator, but can
+        also be used after initialization to adjust the plasmon parameters.
 
         Args:
-            surface_parameter:
+            bulk_parameter (float): Parameter that determines the likelihood of
+                bulk plasmon excitation for excited electrons.
+            surface_parameter (float): Parameter that determines the likelihood of
+                surface plasmon excitation versus single electron excitation
+                during the Auger Neutralization.
 
         Returns:
+            None
 
         """
         self.plasmon_parameters = {"bulk": bulk_parameter,
