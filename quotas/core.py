@@ -397,8 +397,7 @@ class QuotasCalculator(MSONable):
 
             else:
                 loss_probabilities = bulk_loss_function / total_loss_rate * \
-                                     (1 - np.exp(-total_loss_rate * bulk_parameter
-                                                 / energy))
+                                     (1 - np.exp(-total_loss_rate * bulk_parameter))
                 loss_probabilities[self.dieltensor.energies
                                    > energy - conduction_energy] = 0
                 bulk_plas_prob.append(loss_probabilities)
