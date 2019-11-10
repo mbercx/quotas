@@ -301,7 +301,8 @@ class QuotasCalculator(MSONable):
     """
 
     def __init__(self, total_dos, workfunction_data, dieltensor=None,
-                 energy_spacing=1e-2, plasmon_parameters=None):
+                 plasmon_parameters=None, energy_spacing=1e-2,
+                 energy_range=None):
         """
         Initialize a QuotasCalculator.
 
@@ -310,12 +311,17 @@ class QuotasCalculator(MSONable):
         self.total_dos = total_dos
         self.workfunction_data = workfunction_data
         self.dieltensor = dieltensor
-        self.energy_spacing = energy_spacing
         self.plasmon_parameters = plasmon_parameters
+        self.energy_spacing = energy_spacing
+        self.energy_range = energy_range
 
-        self.energies = np.arange(
-            total_dos.energies.min(), total_dos.energies.max(), energy_spacing
-        )
+        if energy_range is None:
+            energy_range = [
+                max(total_dos.energies.min(), total_dos.efermi - 25),
+                min(total_dos.energies.max(), total_dos.efermi + 25)
+                ]
+
+        self.energies = np.arange(energy_range[0], energy_range[1], energy_spacing)
         self.dos = np.interp(self.energies, total_dos.energies,
                              sum(list(total_dos.densities.values())))
 
@@ -327,10 +333,10 @@ class QuotasCalculator(MSONable):
         if dieltensor is not None:
             plasmon_parameters = plasmon_parameters or {"bulk": 0.095,
                                                         "surface": 1.6}
-            self.set_up_plasmon_probabilities(
-                bulk_parameter=plasmon_parameters["bulk"],
-                surface_parameter=plasmon_parameters["surface"]
-            )
+        self.set_up_plasmon_probabilities(
+            bulk_parameter=plasmon_parameters["bulk"],
+            surface_parameter=plasmon_parameters["surface"]
+        )
 
     def set_up_escape_function(self):
         """
@@ -621,8 +627,9 @@ class QuotasCalculator(MSONable):
             "total_dos": self.total_dos.as_dict(),
             "workfunction_data": self.workfunction_data.as_dict(),
             "dieltensor": self.dieltensor.as_dict(),
+            "plasmon_parameters": self.plasmon_parameters,
             "energy_spacing": self.energy_spacing,
-            "plasmon_parameters": self.plasmon_parameters
+            "energy_range": self.energy_range
         }
         return d
 
@@ -640,7 +647,6 @@ class QuotasCalculator(MSONable):
         with zopen(filename, "w") as f:
             f.write(self.to_json())
 
-
     @classmethod
     def from_dict(cls, d):
         """
@@ -655,8 +661,9 @@ class QuotasCalculator(MSONable):
             total_dos=Dos.from_dict(d["total_dos"]),
             workfunction_data=WorkFunctionData.from_dict(d["workfunction_data"]),
             dieltensor=DielTensor.from_dict(d["dieltensor"]),
+            plasmon_parameters=d["plasmon_parameters"],
             energy_spacing=d["energy_spacing"],
-            plasmon_parameters=d["plasmon_parameters"]
+            energy_range=d.get("energy_range", None)
         )
 
     @classmethod
