@@ -2,28 +2,29 @@
 # Copyright (c) Marnik Bercx, University of Antwerp
 # Distributed under the terms of the MIT License
 
-import numpy as np
-import os, cmath
+import cmath
 import copy
+import json
+import os
 import string
 import sys
-import json
 import warnings
-import matplotlib.pyplot as plt
-
-from scipy import constants
-from scipy.constants import hbar, e, m_e
-
 from fnmatch import fnmatch
-from pymatgen import Lattice, PeriodicSite, Structure, Composition
+
+import matplotlib.pyplot as plt
+import numpy as np
+from monty.io import zopen
+from monty.json import MSONable, MontyDecoder, MontyEncoder
+from pymatgen import Lattice, PeriodicSite, Structure
 from pymatgen.core.surface import SlabGenerator, Slab
+from pymatgen.electronic_structure.core import OrbitalType
 from pymatgen.electronic_structure.dos import Dos
-from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.vasp.inputs import Poscar
 from pymatgen.io.vasp.outputs import Outcar, Locpot, Vasprun
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.util.plotting import pretty_plot
-from monty.json import MSONable, MontyDecoder, MontyEncoder
-from monty.io import zopen
+from scipy import constants
+from scipy.constants import hbar, e, m_e
 
 """
 A set of methods to aid in the setup of slab calculations. 
@@ -300,7 +301,7 @@ class QuotasCalculator(MSONable):
 
     """
 
-    def __init__(self, total_dos, workfunction_data, dieltensor=None,
+    def __init__(self, cdos, workfunction_data, dieltensor=None,
                  plasmon_parameters=None, energy_spacing=1e-2,
                  energy_range=None):
         """
@@ -308,7 +309,7 @@ class QuotasCalculator(MSONable):
 
         """
 
-        self.total_dos = total_dos
+        self.cdos = cdos
         self.workfunction_data = workfunction_data
         self.dieltensor = dieltensor
         self.plasmon_parameters = plasmon_parameters
@@ -317,13 +318,13 @@ class QuotasCalculator(MSONable):
 
         if energy_range is None:
             energy_range = [
-                max(total_dos.energies.min(), total_dos.efermi - 25),
-                min(total_dos.energies.max(), total_dos.efermi + 25)
-                ]
+                max(cdos.energies.min(), cdos.efermi - 25),
+                min(cdos.energies.max(), cdos.efermi + 25)
+            ]
 
         self.energies = np.arange(energy_range[0], energy_range[1], energy_spacing)
-        self.dos = np.interp(self.energies, total_dos.energies,
-                             sum(list(total_dos.densities.values())))
+        self.dos = np.interp(self.energies, cdos.energies,
+                             sum(list(cdos.densities.values())))
 
         self.escape_function = self.set_up_escape_function()
 
@@ -352,7 +353,7 @@ class QuotasCalculator(MSONable):
 
         """
 
-        conduction_energy = self.total_dos.get_cbm_vbm()[1]
+        conduction_energy = self.cdos.get_cbm_vbm()[1]
         barrier = self.workfunction_data.vacuum_locpot - conduction_energy
 
         theta = np.arange(0, np.pi / 2, 0.01)
@@ -382,7 +383,7 @@ class QuotasCalculator(MSONable):
         self.plasmon_parameters = {"bulk": bulk_parameter,
                                    "surface": surface_parameter}
         bulk_loss_function = self.dieltensor.get_loss_function()
-        conduction_energy = self.total_dos.get_cbm_vbm()[1]
+        conduction_energy = self.cdos.get_cbm_vbm()[1]
 
         bulk_plas_prob = []
         diffs = np.diff(self.dieltensor.energies)
@@ -431,13 +432,13 @@ class QuotasCalculator(MSONable):
     @property
     def occupied_states(self):
         occupied_states = self.dos.copy()
-        occupied_states[self.energies > self.total_dos.efermi] = 0
+        occupied_states[self.energies > self.cdos.efermi] = 0
         return occupied_states
 
     @property
     def empty_states(self):
         empty_states = self.dos.copy()
-        empty_states[self.energies < self.total_dos.efermi] = 0
+        empty_states[self.energies < self.cdos.efermi] = 0
         return empty_states
 
     def calculate_yield(self, ion_energy, yield_convergence=1e-3):
@@ -488,7 +489,7 @@ class QuotasCalculator(MSONable):
             "total_yield": sum(total_yields)
         }
 
-    def auger_neutralization(self, ion_energy):
+    def auger_neutralization(self, ion_energy, d_electron_weight=1):
         """
         Calculate the distribution of excited electrons after the Auger
         Neutralization of an incoming ion.
@@ -496,9 +497,23 @@ class QuotasCalculator(MSONable):
         Returns:
 
         """
+
+        spd_dict = self.cdos.get_element_spd_dos(
+            self.cdos.structure.composition.elements[0]
+        )
+        weighted_densities = sum(
+            [d_electron_weight * spd_dict[orbital].get_densities()
+             if orbital == OrbitalType(2) else
+             spd_dict[orbital].get_densities() for orbital in spd_dict.keys()]
+        )
+
+        weighted_dos = np.interp(self.energies, self.cdos.energies,
+                                 weighted_densities)
+        weighted_dos[self.energies > self.cdos.efermi] = 0.0
+
         # Calculate the energy released upon neutralization
         neutralization_energy = np.roll(
-            self.occupied_states,
+            weighted_dos,
             int((ion_energy - self.workfunction_data.vacuum_locpot) /
                 self.energy_spacing)
         )
@@ -508,6 +523,8 @@ class QuotasCalculator(MSONable):
             neutralization_energy -= neutralization_energy * self.surf_plas_prob
             plasmon_fraction = np.trapz(neutralization_energy,
                                         self.energies) / pre_norm
+        else:
+            plasmon_fraction = 1
 
         excited_density = np.convolve(
             self.occupied_states,
@@ -624,7 +641,7 @@ class QuotasCalculator(MSONable):
         d = {
             "@module": self.__class__.__module__,
             "@class": self.__class__.__name__,
-            "total_dos": self.total_dos.as_dict(),
+            "total_dos": self.cdos.as_dict(),
             "workfunction_data": self.workfunction_data.as_dict(),
             "dieltensor": self.dieltensor.as_dict(),
             "plasmon_parameters": self.plasmon_parameters,
