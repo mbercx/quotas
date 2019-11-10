@@ -468,12 +468,13 @@ class QuotasCalculator(MSONable):
         while iteration_yield > yield_convergence:
 
             if self.surf_plas_prob is not None:
-                excited_density = self.bulk_plasmon_excitation(excited_density)
+                excited_density, decay_density = self.bulk_plasmon_excitation(
+                    excited_density)
 
             yield_density, excited_density = self.electon_escape(excited_density)
             yield_densities.append(yield_density)
 
-            excited_density = self.electron_scatter(excited_density)
+            excited_density = self.electron_scatter(excited_density + decay_density)
             iteration_yield = np.trapz(yield_density, self.energies)
             total_yields.append(iteration_yield)
 
@@ -517,6 +518,7 @@ class QuotasCalculator(MSONable):
             int((ion_energy - self.workfunction_data.vacuum_locpot) /
                 self.energy_spacing)
         )
+        neutralization_energy[self.energies < 0] = 0
 
         if self.surf_plas_prob is not None:
             pre_norm = np.trapz(neutralization_energy, self.energies)
@@ -619,17 +621,23 @@ class QuotasCalculator(MSONable):
                                                         self.energy_spacing))
                 e_from_plasmon_decay = np.roll(
                     self.occupied_states, int(plasmon_energy / self.energy_spacing))
-                e_from_plasmon_decay[self.empty_states < 0] = 0
-                e_from_plasmon_decay *= number_plasmons / np.trapz(
-                    e_from_plasmon_decay, self.energies)
+                e_from_plasmon_decay[self.energies < self.total_dos.efermi] = 0
+
+                if np.trapz(e_from_plasmon_decay, self.energies) == 0:
+                    e_from_plasmon_decay = np.zeros(self.energies.shape)
+                else:
+                    e_from_plasmon_decay *= number_plasmons / \
+                        np.trapz(e_from_plasmon_decay, self.energies)
+
                 plasmon_final.append(
                     e_after_energy_loss + e_from_plasmon_decay
                 )
 
         plasmon_final = np.array(plasmon_final)
-        final_density = np.trapz(plasmon_final, self.dieltensor.energies, axis=0)
+        decay_density = np.trapz(plasmon_final, self.dieltensor.energies,
+                                      axis=0)
 
-        return excited_density - plasmon_loss + final_density
+        return excited_density - plasmon_loss, decay_density
 
     def as_dict(self):
         """
