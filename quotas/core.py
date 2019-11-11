@@ -18,7 +18,7 @@ from monty.json import MSONable, MontyDecoder, MontyEncoder
 from pymatgen import Lattice, PeriodicSite, Structure
 from pymatgen.core.surface import SlabGenerator, Slab
 from pymatgen.electronic_structure.core import OrbitalType
-from pymatgen.electronic_structure.dos import Dos
+from pymatgen.electronic_structure.dos import CompleteDos
 from pymatgen.io.vasp.inputs import Poscar
 from pymatgen.io.vasp.outputs import Outcar, Locpot, Vasprun
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
@@ -687,7 +687,7 @@ class QuotasCalculator(MSONable):
 
         """
         return cls(
-            cdos=Dos.from_dict(d["cdos"]),
+            cdos=CompleteDos.from_dict(d["cdos"]),
             workfunction_data=WorkFunctionData.from_dict(d["workfunction_data"]),
             dieltensor=DielTensor.from_dict(d["dieltensor"]),
             plasmon_parameters=d["plasmon_parameters"],
