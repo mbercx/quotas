@@ -441,7 +441,7 @@ class QuotasCalculator(MSONable):
         empty_states[self.energies < self.cdos.efermi] = 0
         return empty_states
 
-    def calculate_yield(self, ion_energy, broadening=0.3, d_electron_weight=1,
+    def calculate_yield(self, ion_energy, auger_broadening=None, d_electron_weight=1,
                         yield_convergence=1e-3):
         """
         Calculate the secondary electron emission (SEE) yield density for a
@@ -461,7 +461,7 @@ class QuotasCalculator(MSONable):
 
         """
         excited_density = self.auger_neutralization(ion_energy,
-                                                    broadening,
+                                                    auger_broadening,
                                                     d_electron_weight)
 
         iteration_yield = 1
@@ -495,7 +495,7 @@ class QuotasCalculator(MSONable):
             "total_yield": sum(total_yields)
         }
 
-    def auger_neutralization(self, ion_energy, broadening=0.3,
+    def auger_neutralization(self, ion_energy, auger_broadening=None,
                              d_electron_weight=1):
         """
         Calculate the distribution of excited electrons after the Auger
@@ -534,16 +534,18 @@ class QuotasCalculator(MSONable):
         else:
             plasmon_fraction = 1
 
-        excited_density = np.convolve(
+        auger_transform = np.convolve(
             self.occupied_states,
             neutralization_energy[sum(self.energies < 0):],
             "full"
         )
 
-        excited_density = excited_density[:len(self.energies)]
-        excited_density = get_smeared_densities(self.energies, excited_density,
-                                                sigma=broadening)
-        excited_density *= self.empty_states
+        auger_transform = auger_transform[:len(self.energies)]
+        if auger_broadening is not None:
+            auger_transform = get_smeared_densities(self.energies, auger_transform,
+                                                    sigma=auger_broadening)
+
+        excited_density = auger_transform * self.empty_states
         normalization = np.trapz(excited_density, self.energies)
 
         if self.surf_plas_prob is not None:
@@ -635,7 +637,8 @@ class QuotasCalculator(MSONable):
                     e_from_plasmon_decay = np.zeros(self.energies.shape)
                 else:
                     e_from_plasmon_decay *= number_plasmons / \
-                        np.trapz(e_from_plasmon_decay, self.energies)
+                                            np.trapz(e_from_plasmon_decay,
+                                                     self.energies)
 
                 plasmon_final.append(
                     e_after_energy_loss + e_from_plasmon_decay
@@ -643,7 +646,7 @@ class QuotasCalculator(MSONable):
 
         plasmon_final = np.array(plasmon_final)
         decay_density = np.trapz(plasmon_final, self.dieltensor.energies,
-                                      axis=0)
+                                 axis=0)
 
         return excited_density - plasmon_loss, decay_density
 
@@ -1797,6 +1800,7 @@ def get_smeared_densities(energies, densities, sigma):
 
     smeared_dens = gaussian_filter1d(densities, sigma / avgdiff)
     return smeared_dens
+
 
 # Stolen from https://goshippo.com/blog/measure-real-size-any-python-object/
 # Used to calculate the actual total size of a python object
