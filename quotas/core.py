@@ -441,7 +441,8 @@ class QuotasCalculator(MSONable):
         empty_states[self.energies < self.cdos.efermi] = 0
         return empty_states
 
-    def calculate_yield(self, ion_energy, yield_convergence=1e-3):
+    def calculate_yield(self, ion_energy, d_electron_weight=1,
+                        yield_convergence=1e-3):
         """
         Calculate the secondary electron emission (SEE) yield density for a
         specified ionization energy of an incoming ion.
@@ -459,7 +460,8 @@ class QuotasCalculator(MSONable):
                 "total_yield": Total SEE yield per ion.
 
         """
-        excited_density = self.auger_neutralization(ion_energy)
+        excited_density = self.auger_neutralization(ion_energy,
+                                                    d_electron_weight)
 
         iteration_yield = 1
         yield_densities = []
@@ -470,6 +472,8 @@ class QuotasCalculator(MSONable):
             if self.surf_plas_prob is not None:
                 excited_density, decay_density = self.bulk_plasmon_excitation(
                     excited_density)
+            else:
+                decay_density = np.zeros(self.energies.shape)
 
             yield_density, excited_density = self.electon_escape(excited_density)
             yield_densities.append(yield_density)
