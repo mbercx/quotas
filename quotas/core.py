@@ -621,7 +621,7 @@ class QuotasCalculator(MSONable):
                                                         self.energy_spacing))
                 e_from_plasmon_decay = np.roll(
                     self.occupied_states, int(plasmon_energy / self.energy_spacing))
-                e_from_plasmon_decay[self.energies < self.total_dos.efermi] = 0
+                e_from_plasmon_decay[self.energies < self.cdos.efermi] = 0
 
                 if np.trapz(e_from_plasmon_decay, self.energies) == 0:
                     e_from_plasmon_decay = np.zeros(self.energies.shape)
@@ -649,7 +649,7 @@ class QuotasCalculator(MSONable):
         d = {
             "@module": self.__class__.__module__,
             "@class": self.__class__.__name__,
-            "total_dos": self.cdos.as_dict(),
+            "cdos": self.cdos.as_dict(),
             "workfunction_data": self.workfunction_data.as_dict(),
             "dieltensor": self.dieltensor.as_dict(),
             "plasmon_parameters": self.plasmon_parameters,
@@ -683,7 +683,7 @@ class QuotasCalculator(MSONable):
 
         """
         return cls(
-            total_dos=Dos.from_dict(d["total_dos"]),
+            cdos=Dos.from_dict(d["cdos"]),
             workfunction_data=WorkFunctionData.from_dict(d["workfunction_data"]),
             dieltensor=DielTensor.from_dict(d["dieltensor"]),
             plasmon_parameters=d["plasmon_parameters"],
@@ -1510,6 +1510,7 @@ class DielTensor(MSONable):
         """
         # Vasprun format: dielectric data is length 3 tuple
         if fmt == "vasprun" or filename.endswith(".xml"):
+
             dielectric_data = Vasprun(filename, parse_potcar_file=False).dielectric
 
             energies = np.array(dielectric_data[0])
