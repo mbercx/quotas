@@ -332,8 +332,8 @@ class QuotasCalculator(MSONable):
         self._surf_plas_prob = None
 
         if dieltensor is not None:
-            plasmon_parameters = plasmon_parameters or {"bulk": 0.095,
-                                                        "surface": 1.6}
+            plasmon_parameters = plasmon_parameters or {"bulk": 0.105,
+                                                        "surface": 1.55}
         self.set_up_plasmon_probabilities(
             bulk_parameter=plasmon_parameters["bulk"],
             surface_parameter=plasmon_parameters["surface"]
