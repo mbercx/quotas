@@ -441,7 +441,7 @@ class QuotasCalculator(MSONable):
         empty_states[self.energies < self.cdos.efermi] = 0
         return empty_states
 
-    def calculate_yield(self, ion_energy, d_electron_weight=1,
+    def calculate_yield(self, ion_energy, broadening=0.3, d_electron_weight=1,
                         yield_convergence=1e-3):
         """
         Calculate the secondary electron emission (SEE) yield density for a
@@ -461,6 +461,7 @@ class QuotasCalculator(MSONable):
 
         """
         excited_density = self.auger_neutralization(ion_energy,
+                                                    broadening,
                                                     d_electron_weight)
 
         iteration_yield = 1
@@ -494,7 +495,8 @@ class QuotasCalculator(MSONable):
             "total_yield": sum(total_yields)
         }
 
-    def auger_neutralization(self, ion_energy, d_electron_weight=1):
+    def auger_neutralization(self, ion_energy, broadening=0.3,
+                             d_electron_weight=1):
         """
         Calculate the distribution of excited electrons after the Auger
         Neutralization of an incoming ion.
@@ -539,6 +541,8 @@ class QuotasCalculator(MSONable):
         )
 
         excited_density = excited_density[:len(self.energies)]
+        excited_density = get_smeared_densities(self.energies, excited_density,
+                                                sigma=broadening)
         excited_density *= self.empty_states
         normalization = np.trapz(excited_density, self.energies)
 
@@ -1775,6 +1779,24 @@ def generate_divisors(number):
         yield divisor
         divisor -= 1
 
+
+def get_smeared_densities(energies, densities, sigma):
+    """
+    Use a Gaussian kernel to smear a density distribution.
+
+    Args:
+        sigma: Std dev of Gaussian smearing function.
+
+    Returns:
+        Gaussian-smeared densities.
+    """
+    from scipy.ndimage.filters import gaussian_filter1d
+
+    diff = np.diff(energies)
+    avgdiff = sum(diff) / len(diff)
+
+    smeared_dens = gaussian_filter1d(densities, sigma / avgdiff)
+    return smeared_dens
 
 # Stolen from https://goshippo.com/blog/measure-real-size-any-python-object/
 # Used to calculate the actual total size of a python object
