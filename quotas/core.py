@@ -487,6 +487,7 @@ class QuotasCalculator(MSONable):
                 excited_density + bulk_decay_density)
             iteration_yield = np.trapz(yield_density, self.energies)
             total_yields.append(iteration_yield)
+            print(iteration_yield)
 
         vac_index = sum(self.energies < self.workfunction_data.vacuum_locpot)
         final_yield_density = sum(yield_densities)
@@ -545,13 +546,14 @@ class QuotasCalculator(MSONable):
                 surf_plasmon_energy[sum(self.energies < 0):],
                 "full"
             )
+            surf_plasmon_transform = surf_plasmon_transform[:len(self.energies)]
             excited_plasmon_density = surf_plasmon_transform * self.empty_states
             surf_norm = np.trapz(excited_plasmon_density, self.energies)
 
-            excited_plasmon_density /= surf_norm
-            excited_plasmon_density *= (1 - auger_fraction)
+            if surf_norm != 0:
+                excited_plasmon_density /= surf_norm
+                excited_plasmon_density *= (1 - auger_fraction)
 
-            print(auger_fraction)
         else:
             auger_fraction = 1
             excited_plasmon_density = np.zeros(shape=self.energies.shape)
