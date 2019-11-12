@@ -487,7 +487,6 @@ class QuotasCalculator(MSONable):
                 excited_density + bulk_decay_density)
             iteration_yield = np.trapz(yield_density, self.energies)
             total_yields.append(iteration_yield)
-            print(iteration_yield)
 
         vac_index = sum(self.energies < self.workfunction_data.vacuum_locpot)
         final_yield_density = sum(yield_densities)
