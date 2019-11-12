@@ -332,8 +332,8 @@ class QuotasCalculator(MSONable):
         self._surf_plas_prob = None
 
         if dieltensor is not None:
-            plasmon_parameters = plasmon_parameters or {"bulk": 0.105,
-                                                        "surface": 1.55}
+            plasmon_parameters = plasmon_parameters or {"bulk": 0.11,
+                                                        "surface": 1.6}
         self.set_up_plasmon_probabilities(
             bulk_parameter=plasmon_parameters["bulk"],
             surface_parameter=plasmon_parameters["surface"]
@@ -631,6 +631,7 @@ class QuotasCalculator(MSONable):
                 decay_matrix.append(zero_row)
             else:
                 number_plasmons = np.trapz(row, self.energies)
+
                 e_after_energy_loss = np.roll(row, -int(plasmon_energy /
                                                         self.energy_spacing))
                 e_from_plasmon_decay = np.roll(
@@ -649,7 +650,7 @@ class QuotasCalculator(MSONable):
 
         plasmon_final = np.array(plasmon_final)
         plasmon_final_density = np.trapz(plasmon_final, self.dieltensor.energies,
-                                 axis=0)
+                                         axis=0)
         decay_matrix = np.array(decay_matrix)
         decay_density = np.trapz(decay_matrix, self.dieltensor.energies,
                                  axis=0)
