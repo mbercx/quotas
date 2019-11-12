@@ -621,12 +621,14 @@ class QuotasCalculator(MSONable):
         plasmon_loss = np.trapz(plasmon_density, self.dieltensor.energies, axis=0)
 
         plasmon_final = []
+        decay_matrix = []
         zero_row = np.zeros(self.energies.shape)
 
         for plasmon_energy, row in zip(self.dieltensor.energies, plasmon_density):
 
             if np.all(row == 0):
                 plasmon_final.append(zero_row)
+                decay_matrix.append(zero_row)
             else:
                 number_plasmons = np.trapz(row, self.energies)
                 e_after_energy_loss = np.roll(row, -int(plasmon_energy /
@@ -642,15 +644,17 @@ class QuotasCalculator(MSONable):
                                             np.trapz(e_from_plasmon_decay,
                                                      self.energies)
 
-                plasmon_final.append(
-                    e_after_energy_loss + e_from_plasmon_decay
-                )
+                plasmon_final.append(e_after_energy_loss)
+                decay_matrix.append(e_from_plasmon_decay)
 
         plasmon_final = np.array(plasmon_final)
-        decay_density = np.trapz(plasmon_final, self.dieltensor.energies,
+        plasmon_final_density = np.trapz(plasmon_final, self.dieltensor.energies,
+                                 axis=0)
+        decay_matrix = np.array(decay_matrix)
+        decay_density = np.trapz(decay_matrix, self.dieltensor.energies,
                                  axis=0)
 
-        return excited_density - plasmon_loss, decay_density
+        return excited_density - plasmon_loss + plasmon_final_density, decay_density
 
     def as_dict(self):
         """
