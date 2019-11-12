@@ -461,9 +461,9 @@ class QuotasCalculator(MSONable):
                 "total_yield": Total SEE yield per ion.
 
         """
-        excited_density = self.auger_neutralization(ion_energy,
-                                                    auger_broadening,
-                                                    d_electron_weight)
+        excited_density, surf_decay_density = self.auger_neutralization(
+            ion_energy, auger_broadening, d_electron_weight
+        )
 
         iteration_yield = 1
         yield_densities = []
@@ -471,17 +471,20 @@ class QuotasCalculator(MSONable):
 
         while iteration_yield > yield_convergence:
 
-            if self.surf_plas_prob is not None:
-                excited_density, decay_density = self.bulk_plasmon_excitation(
+            if self.bulk_plas_prob is not None:
+                excited_density, bulk_decay_density = self.bulk_plasmon_excitation(
                     excited_density)
             else:
-                decay_density = np.zeros(self.energies.shape)
+                bulk_decay_density = np.zeros(self.energies.shape)
 
             yield_density, excited_density = self.electon_escape(excited_density)
             yield_densities.append(yield_density)
 
+            excited_density += surf_decay_density
+            surf_decay_density = np.zeros(shape=self.energies.shape)
+
             excited_density = electron_cascades * self.electron_scatter(
-                excited_density + decay_density)
+                excited_density + bulk_decay_density)
             iteration_yield = np.trapz(yield_density, self.energies)
             total_yields.append(iteration_yield)
 
@@ -530,11 +533,28 @@ class QuotasCalculator(MSONable):
 
         if self.surf_plas_prob is not None:
             pre_norm = np.trapz(neutralization_energy, self.energies)
-            neutralization_energy -= neutralization_energy * self.surf_plas_prob
-            plasmon_fraction = np.trapz(neutralization_energy,
-                                        self.energies) / pre_norm
+
+            surf_plasmon_energy = neutralization_energy * self.surf_plas_prob
+            neutralization_energy -= surf_plasmon_energy
+
+            auger_fraction = np.trapz(neutralization_energy,
+                                      self.energies) / pre_norm
+
+            surf_plasmon_transform = np.convolve(
+                self.occupied_states,
+                surf_plasmon_energy[sum(self.energies < 0):],
+                "full"
+            )
+            excited_plasmon_density = surf_plasmon_transform * self.empty_states
+            surf_norm = np.trapz(excited_plasmon_density, self.energies)
+
+            excited_plasmon_density /= surf_norm
+            excited_plasmon_density *= (1 - auger_fraction)
+
+            print(auger_fraction)
         else:
-            plasmon_fraction = 1
+            auger_fraction = 1
+            excited_plasmon_density = np.zeros(shape=self.energies.shape)
 
         auger_transform = np.convolve(
             self.occupied_states,
@@ -550,12 +570,12 @@ class QuotasCalculator(MSONable):
         excited_density = auger_transform * self.empty_states
         normalization = np.trapz(excited_density, self.energies)
 
-        if self.surf_plas_prob is not None:
-            normalization /= plasmon_fraction
-
         excited_density /= normalization
 
-        return excited_density
+        if self.surf_plas_prob is not None:
+            excited_density *= auger_fraction
+
+        return excited_density, excited_plasmon_density
 
     def electon_escape(self, excited_density):
         """
@@ -649,7 +669,7 @@ class QuotasCalculator(MSONable):
 
         plasmon_final = np.array(plasmon_final)
         plasmon_final_density = np.trapz(plasmon_final, self.dieltensor.energies,
-                                 axis=0)
+                                         axis=0)
         decay_matrix = np.array(decay_matrix)
         decay_density = np.trapz(decay_matrix, self.dieltensor.energies,
                                  axis=0)
