@@ -197,9 +197,9 @@ class QSlab(Slab):
 
     def find_atomic_layers(self, layer_tol=2e-2):
         """
-            Determines the atomic layers in the c-direction of the slab. Note that as
-            long as a site is "close enough" to ONE other site of a layer (determined
-            by the 'layer_tol' variable), it will be added to that layer.
+            Determines the atomic layers in the c-direction of the slab. Note
+            that as long as a site is "close enough" to ONE other site of a layer
+            (determined by the 'layer_tol' variable), it will be added to that layer.
 
             Another option would be to demand that the distance is smaller than
             'layer_tol' for ALL sites of the layer, but then the division in layers
@@ -211,13 +211,13 @@ class QSlab(Slab):
                     layer.
 
             Returns:
-                (list) List of the atomic layers, sorted by their position in the c-direction.
+                (list) List of the atomic layers, sorted by their position in
+                    the c-direction.
                 Each atomic layer is also represented by a list of sites.
             """
 
         atomic_layers = []
 
-        # Get a unit vector perpendicular to the layers (i.e. the a and b lattice vector)
         m = self.lattice.matrix
         u = np.cross(m[0, :], m[1, :])
         u /= np.linalg.norm(u)
@@ -227,29 +227,23 @@ class QSlab(Slab):
 
             is_in_layer = False
 
-            # Check to see if the site is in a layer that is already in our list
             for layer in atomic_layers:
 
-                # Compare the third fractional coordinate of the site with that of
-                # the atoms in the considered layer
                 for atom_site in layer.copy():
 
-                    distance = abs(atom_site.frac_coords[2] - site.frac_coords[2]) * \
-                               c_proj
+                    distance = abs(
+                        atom_site.frac_coords[2] - site.frac_coords[2]
+                    ) * c_proj
 
                     if distance < layer_tol or abs(distance - c_proj) < layer_tol:
                         is_in_layer = True
                         layer.append(site)
-                        break  # Break out of the loop, else the site is added
-                        # multiple times
+                        break  # Else the site is added multiple times
 
-            # If the site is not found in any of the atomic layers, create a new
-            # atomic layer
             if not is_in_layer:
                 atomic_layers.append([site, ])
 
-        # Sort the atomic layers
-        atomic_layers.sort(key=lambda layer: layer[0].frac_coords[2])
+        atomic_layers.sort(key=lambda l: l[0].frac_coords[2])
 
         return atomic_layers
 
@@ -282,14 +276,11 @@ class QSlab(Slab):
                                            [site["tot"] for site in
                                             out.magnetization])
 
-        # Update the lattice
         self._lattice = new_slab.lattice
 
-        # Update the coordinates of the occupied sites.
         for i, site in enumerate(self):
             new_site = new_slab.sites[i]
 
-            # Update the site coordinates
             self.replace(i, species=new_site.species,
                          coords=new_site.frac_coords,
                          properties=new_site.properties)
@@ -306,6 +297,11 @@ class QuotasCalculator(MSONable):
                  energy_range=None):
         """
         Initialize a QuotasCalculator.
+
+        cdos (CompleteDos): pymatgen.electronic_structure.dos.CompleteDos
+            instance, extracted from the vasprun.xml file of the surface DOS
+            calculation.
+        workfunction_data (quotas.core.WorkFunctionData):
 
         """
 
@@ -344,8 +340,8 @@ class QuotasCalculator(MSONable):
         Set up the escape function for the secondary electrons.
 
         TODO: This function should be optimized
-        Right now this function has been largely copied in semantics from its MATLAB
-        counterpart. I believe this can be more efficient.
+        Right now this function has been largely copied in semantics from its
+        MATLAB counterpart. I believe this can be more efficient.
 
         Returns:
             (numpy.ndarray): N-sized vector that represents the probability for
@@ -441,15 +437,22 @@ class QuotasCalculator(MSONable):
         empty_states[self.energies < self.cdos.efermi] = 0
         return empty_states
 
-    def calculate_yield(self, ion_energy, electron_cascades=1,
-                        auger_broadening=None, d_electron_weight=1,
-                        yield_convergence=1e-3):
+    def calculate_yield(self, ion_energy, cascades_factor=1,
+                        auger_broadening=None, override_workfunction=None,
+                        d_electron_weight=1, yield_convergence=1e-3):
         """
         Calculate the secondary electron emission (SEE) yield density for a
         specified ionization energy of an incoming ion.
 
         Args:
             ion_energy (float): Ionization energy of the incoming ion.
+            cascades_factor (float): Factor between 0-1 used to decrease or turn off
+                electron cascades.
+            auger_broadening (float): Standard deviation (sigma) of the gaussian
+                broadening applied to the Auger Transform.
+            d_electron_weight (float): Weight factor of the d-orbital projected
+                states for the neutralization process. Can be used to tune the
+                participation of d orbitals.
             yield_convergence (float): Convergence condition on the yield
                 calculation using the electron cascade cycle.
 
@@ -480,7 +483,7 @@ class QuotasCalculator(MSONable):
             yield_density, excited_density = self.electon_escape(excited_density)
             yield_densities.append(yield_density)
 
-            excited_density = electron_cascades * self.electron_scatter(
+            excited_density = cascades_factor * self.electron_scatter(
                 excited_density + decay_density)
             iteration_yield = np.trapz(yield_density, self.energies)
             total_yields.append(iteration_yield)
@@ -503,7 +506,16 @@ class QuotasCalculator(MSONable):
         Calculate the distribution of excited electrons after the Auger
         Neutralization of an incoming ion.
 
+        Args:
+            ion_energy (float): Ionization energy of the incoming ion.
+            auger_broadening (float): Standard deviation (sigma) of the gaussian
+                broadening applied to the Auger Transform.
+            d_electron_weight (float): Weight factor of the d-orbital projected
+                states for the neutralization process. Can be used to tune the
+                participation of d orbitals.
+
         Returns:
+            Density spectrum of the excited electrons after neutralization.
 
         """
 
