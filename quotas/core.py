@@ -437,8 +437,17 @@ class QuotasCalculator(MSONable):
         empty_states[self.energies < self.cdos.efermi] = 0
         return empty_states
 
+    @property
+    def work_function(self):
+        return self.workfunction_data.vacuum_locpot - self.cdos.efermi
+
+    @work_function.setter
+    def work_function(self, work_function):
+        new_vacuum_locpot = self.cdos.efermi + work_function
+        self.workfunction_data.vacuum_locpot = new_vacuum_locpot
+
     def calculate_yield(self, ion_energy, cascades_factor=1,
-                        auger_broadening=None, override_workfunction=None,
+                        auger_broadening=None,
                         d_electron_weight=1, yield_convergence=1e-3):
         """
         Calculate the secondary electron emission (SEE) yield density for a
