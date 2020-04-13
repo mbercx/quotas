@@ -292,6 +292,8 @@ class QuotasCalculator(MSONable):
 
     """
 
+    DEFAULT_PLASMON_PARAMETERS = {"bulk": 0.11, "surface": 1.25}
+s
     def __init__(self, cdos, workfunction_data, dieltensor=None,
                  plasmon_parameters=None, energy_spacing=1e-2,
                  energy_range=None):
@@ -328,8 +330,8 @@ class QuotasCalculator(MSONable):
         self._surf_plas_prob = None
 
         if dieltensor is not None:
-            plasmon_parameters = plasmon_parameters or {"bulk": 0.11,
-                                                        "surface": 1.6}
+            plasmon_parameters = plasmon_parameters or \
+                                 self.DEFAULT_PLASMON_PARAMETERS
         self.set_up_plasmon_probabilities(
             bulk_parameter=plasmon_parameters["bulk"],
             surface_parameter=plasmon_parameters["surface"]
